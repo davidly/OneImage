@@ -1,6 +1,10 @@
 # OneImage
 
-ISA that's more efficient than popular ISAs
+OneImage is an ISA that's more efficient than popular ISAs
+
+Details can be found here: [OneImage](https://medium.com/@davidly_33504/oneimage-towards-a-more-perfect-cpu-5ea8b418cd5e)
+
+In short:
 
 Two functions in tttoi.s as compared with assembly implementations for other ISAs found [here](https://github.com/davidly/ttt)
 
