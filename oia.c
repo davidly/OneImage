@@ -2451,7 +2451,7 @@ int cdecl main( int argc, char * argv[] )
     if ( !fp )
         show_error( "can't open output file" );
 
-    memset( &h, sizeof( h ), 0 );
+    memset( &h, 0, sizeof( h ) );
     h.sig0 = 'O';
     h.sig1 = 'I';
     h.version = 1;

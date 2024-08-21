@@ -144,7 +144,7 @@ extern struct OneImage g_oi;
 #endif /* _MSC_VER <= 600 */
 #else
 #define __assume( x )
-#endif /* _MSC_VER
+#endif /* _MSC_VER */
 
 /* opcode decoding utilities */
 
