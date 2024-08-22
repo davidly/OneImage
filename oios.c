@@ -38,6 +38,12 @@ char * strchr( pc, c ) char * pc; char c;
 
 int g_halted = 0;
 uint8_t * ram = 0;
+uint32_t ram_size = 0;
+
+#ifdef AZTECCPM
+/* note that first two arguments are reversed */
+#define memcpy( dest, src, length ) movmem( src, dest, (int) length )
+#endif
 
 void OIHardTermination()
 {
@@ -108,7 +114,100 @@ void OIHalt()
     g_halted = 1;
 } /* OIHalt */
 
-void usage()
+#ifdef OLDCPU
+static size_t round_up( x, multiple ) size_t x; size_t multiple;
+#else
+static size_t round_up( size_t x, size_t multiple )
+#endif
+{
+    size_t remainder;
+
+    if ( (size_t) 0 == multiple )
+        return x;
+
+    remainder = x % multiple;
+    if ( (size_t) 0 == remainder )
+        return x;
+
+    return x + multiple - remainder;
+} /* round_up */
+
+#ifdef OLDCPU
+size_t size_args_env( appname, argc, argv, pchild_argc, first_child_arg )
+    char * appname; int argc; char * argv[]; int *pchild_argc; int first_child_arg;
+#else
+size_t size_args_env( char * appname, int argc, char * argv[], int *pchild_argc, int first_child_arg )
+#endif
+{
+    size_t len, head_len;
+    int i;
+
+    len = strlen( appname );
+    head_len = (int) ( 6 * sizeof( oi_t ) + ( 1 + len ) );
+
+    if ( -1 != first_child_arg )
+    {
+        *pchild_argc = 1 + ( argc - first_child_arg );
+        for ( i = first_child_arg; i < argc; i++ )
+            head_len += (int) ( sizeof( oi_t ) + ( 1 + strlen( argv[ i ] ) ) );
+    }
+
+    /* make sure the stack is image width aligned */
+    head_len = round_up( head_len, sizeof( oi_t ) );
+    return head_len;
+} /* size_args_env */
+
+#ifdef OLDCPU
+void init_args_env( appname, argc, argv, child_argc, first_child_arg, head_len )
+    char * appname; int argc; char * argv[]; int child_argc; int first_child_arg; size_t head_len;
+#else
+void init_args_env( char * appname, int argc, char * argv[], int child_argc, int first_child_arg, size_t head_len )
+#endif
+{
+    int i;
+    oi_t offset, x;
+
+    offset = (oi_t) ( ram_size - head_len );
+    x = (oi_t) child_argc;
+    memcpy( &ram[ offset ], &x, sizeof( oi_t ) );                           /* argc */
+    offset += sizeof( oi_t );
+    x = offset + ( 2 * sizeof( oi_t ) );                                    /* get past argv and penv to argv array */
+    memcpy( & ram[ offset ], &x, sizeof( oi_t ) );                          /* argv */
+    offset += sizeof( oi_t );
+    x = offset + (oi_t) ( ( child_argc + 1 ) * sizeof( oi_t ) );
+    memcpy( & ram[ offset ], &x, sizeof( oi_t ) );                          /* penv */
+    x += sizeof( oi_t );                                                    /* reserve 1 blank environment entry */
+    offset += sizeof( oi_t );
+
+    strcpy( (char *) & ram[ x ], appname );
+    memcpy( & ram[ offset ], &x, sizeof( oi_t ) );                          /* argv[0] */
+    offset += sizeof( oi_t );
+    x += (oi_t) ( 1 + strlen( appname ) );
+
+    if ( -1 != first_child_arg )
+    {
+        for ( i = first_child_arg; i < argc; i++ )
+        {
+            strcpy( (char *) & ram[ x ], argv[ i ] );
+            memcpy( & ram[ offset ], &x, sizeof( oi_t ) );                  /* argv[1..n] */
+            offset += sizeof( oi_t );
+            x += (oi_t) ( 1 + strlen( argv[ i ] ) );
+        }
+    }
+
+    x = 0;
+    memcpy( & ram[ offset ], &x, sizeof( oi_t ) );                          /* 0 terminator to argv array */
+    offset += sizeof( oi_t );
+    memcpy( & ram[ offset ], &x, sizeof( oi_t ) );                          /* 0 terminator to env array */
+    offset += sizeof( oi_t );
+
+#ifndef NDEBUG
+    trace( "argument and environment information:\n" );
+    trace_binary_data( & ram[ ram_size - head_len ], head_len, 2 );
+#endif
+} /* init_args_env */
+
+static void usage()
 {
     printf( "usage: oios [flags] <appname.oi>\n" );
     printf( "    OneImage Operating System.\n" );
@@ -128,12 +227,12 @@ int main( argc, argv ) int argc; char * argv[];
 int cdecl main( int argc, char * argv[] )
 #endif
 {
-    size_t result;
+    size_t result, head_len;
     char * input, * pc, * parg, c, ca;
     FILE * fp;
-    int i;
+    int i, first_child_arg, child_argc;
     bool show_image_header, tracing, instruction_tracing, show_perf;
-    uint32_t total_instructions;
+    uint32_t total_instructions, ram_requirement;
     uint8_t image_width;
     struct OIHeader h;
     static char appname[ 80 ];
@@ -144,6 +243,9 @@ int cdecl main( int argc, char * argv[] )
     instruction_tracing = false;
     show_image_header = false;
     show_perf = false;
+    first_child_arg = -1;
+    child_argc = 1;
+    head_len = 0;
 
     for ( i = 1; i < argc; i++ )
     {
@@ -168,6 +270,11 @@ int cdecl main( int argc, char * argv[] )
         }
         else if ( 0 == input )
             input = argv[ i ];
+        else
+        {
+            first_child_arg = i;
+            break;
+        }
     }
 
     if ( 0 == input )
@@ -182,7 +289,6 @@ int cdecl main( int argc, char * argv[] )
 #endif
 
     strcpy( appname, input );
-
     pc = strchr( appname, '.' );
     if ( !pc )
         strcat( appname, ".oi" );
@@ -260,14 +366,21 @@ int cdecl main( int argc, char * argv[] )
     }
 #endif
 
-    ram = ResetOI( (oi_t) h.loRamRequired, (oi_t) h.loInitialPC, image_width );
+    head_len = size_args_env( appname, argc, argv, & child_argc, first_child_arg );
+    ram_requirement = (uint32_t) ( h.loRamRequired + head_len );
+    ram_size = RamInformationOI( ram_requirement, & ram );
     if ( 0 == ram )
     {
-        printf( "insufficient RAM for this application\n" );
+        printf( "insufficient RAM for this application. required %u, available %u\n", (int) ram_requirement, (int) ram_size );
         usage();
     }
 
-    result = fread( ram, (uint16_t) h.cbCode + (uint16_t) h.cbInitializedData, 1, fp );
+    /* write the environment and argument info above where the top of stack will be */
+    init_args_env( appname, argc, argv, child_argc, first_child_arg, head_len );
+
+    ResetOI( (oi_t) h.loRamRequired, (oi_t) h.loInitialPC, (oi_t) ( ram_size - head_len ), image_width );
+
+    result = fread( ram, (int) ( h.cbCode + h.cbInitializedData ), 1, fp );
     if ( 1 != result )
     {
         printf( "can't read image file\n" );

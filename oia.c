@@ -56,7 +56,7 @@ enum TokenTypes
     T_CMPST, T_PUSH, T_POP, T_PUSHF, T_STST, T_ZERO, T_SYSCALL, T_MODDIV,
     T_RZERO, T_RPC, T_RSP, T_RFRAME, T_RARG1, T_RARG2, T_RRES, T_RTMP,
     T_GT, T_LT, T_EQ, T_NE, T_GE, T_LE, T_MOV, T_RET, T_RETZERO, T_RETNF, T_RETZERONF, T_INV,
-    T_CSTF, T_MATHST, T_MATH, T_PLUS, T_CALLNF, T_CALL
+    T_CSTF, T_MATHST, T_MATH, T_PLUS, T_IMGWID, T_CALLNF, T_CALL
 };
 
 static const char * TokenSet[] =
@@ -71,7 +71,7 @@ static const char * TokenSet[] =
     "CMPST", "PUSH", "POP", "PUSHF", "STST", "ZERO", "SYSCALL", "MODDIV",
     "RZERO", "RPC", "RSP", "RFRAME", "RARG1", "RARG2", "RRES", "RTMP",
     "GT", "LT", "EQ", "NE", "GE", "LE", "MOV", "RET", "RETZERO", "RETNF", "RETZERONF", "INV",
-    "CSTF", "MATHST", "MATH", "+", "CALLNF", "CALL"
+    "CSTF", "MATHST", "MATH", "+", "IMGWID", "CALLNF", "CALL"
 };
 
 bool is_reg( size_t t ) { return ( t >= T_RZERO && t <= T_RTMP ); }
@@ -862,6 +862,13 @@ int cdecl main( int argc, char * argv[] )
                 initialized_data_so_far += size;
                 break;
             }
+            case T_IMGWID:
+            {
+                if ( 1 != token_count )
+                    show_error( "imgwid takes no arguments" );
+                code[ code_so_far++ ] = 0x84;
+                break;
+            }
             case T_STST:
             {
                 if ( 2 != token_count )
@@ -1563,7 +1570,7 @@ int cdecl main( int argc, char * argv[] )
                 if ( is_reg( t2 ) ) // ld rdst, [rsrc]
                 {
                     code[ code_so_far++ ] = compose_op( 6, reg_from_token( t1 ), 1 );
-                    code[ code_so_far++ ] = compose_op( 0, reg_from_token( t2 ), 1 );
+                    code[ code_so_far++ ] = compose_op( 0, reg_from_token( t2 ), g_byte_len );
                 }
                 else // ld rdst, [ address (+ number) ]
                 {
@@ -1587,8 +1594,8 @@ int cdecl main( int argc, char * argv[] )
                     if ( !is_reg( t1 ) || ( 3 != token_count ) )
                         show_error( "invalid arguments for ldb. expected ldb rdst, [rsrc]\n" );
 
-                    code[ code_so_far++ ] = compose_op( 0, reg_from_token( t1 ), 0 );
-                    code[ code_so_far++ ] = compose_op( 6, reg_from_token( t2 ), 0 );
+                    code[ code_so_far++ ] = compose_op( 6, reg_from_token( t1 ), 1 );
+                    code[ code_so_far++ ] = compose_op( 0, reg_from_token( t2 ), 0 );
                 }
                 else // ldb rdst, [ address (+ number) ]
                 {
@@ -2331,6 +2338,7 @@ int cdecl main( int argc, char * argv[] )
             case T_SHRIMG:
             case T_INV:
             case T_SUBST:
+            case T_IMGWID:
             {
                 code_so_far++;
                 break;

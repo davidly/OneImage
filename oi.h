@@ -19,6 +19,7 @@
     typedef int int16_t;
     typedef unsigned long uint32_t;
     typedef long int32_t;
+    typedef unsigned int size_t;
     
     #define _countof( X ) ( sizeof( X ) / sizeof( X[0] ) )
 
@@ -107,7 +108,8 @@
 extern struct OneImage g_oi;
 
 #ifdef HISOFTCPM
-    extern uint8_t * ResetOI( oi_t, oi_t, uint8_t );
+    extern uint32_t RamInformationOI( uint32_t, uint8_t ** );
+    extern void ResetOI( oi_t, oi_t, oi_t, uint8_t );
     extern uint32_t ExecuteOI( void );
     extern void TraceInstructionsOI( int );
     extern char * DisassembleOI( uint8_t *, oi_t, uint8_t );
@@ -117,7 +119,8 @@ extern struct OneImage g_oi;
     extern void OIHardTermination( void );
 #else /* HISOFTCPM */
 #ifdef AZTECCPM
-    extern uint8_t * ResetOI();
+    extern uint32_t RamInformationOI();
+    extern void ResetOI();
     extern uint32_t ExecuteOI();
     extern void TraceInstructionsOI( );
     extern char * DisassembleOI();
@@ -126,8 +129,8 @@ extern struct OneImage g_oi;
     extern void OIHalt();
     extern void OIHardTermination();
 #else
-    
-    extern uint8_t * ResetOI( oi_t mem_size, oi_t pc, uint8_t image_width );
+    extern uint32_t RamInformationOI( uint32_t required, uint8_t ** ppRam );
+    extern void ResetOI( oi_t mem_size, oi_t pc, oi_t sp, uint8_t image_width );
     extern uint32_t ExecuteOI( void );
     extern void TraceInstructionsOI( bool trace );
     extern const char * DisassembleOI( uint8_t * pop, oi_t rpc, uint8_t image_width );

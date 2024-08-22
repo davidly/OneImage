@@ -12,8 +12,8 @@
 #include <stdint.h>
 #endif
 
-#include "trace.h"
 #include "oi.h"
+#include "trace.h"
 
 #if defined( FORCETRACING ) || !defined( NDEBUG )
 
@@ -217,6 +217,7 @@ const char * DisassembleOI( uint8_t * pop, oi_t rpc, uint8_t image_width )
         case 0x8c: case 0x90: case 0x94: case 0x98: case 0x9c:
             { sprintf( buf, "zero %s", RegOpString( op ) ); break; }
         case 0x80: { strcpy( buf, "subst" ); break; }
+        case 0x84: { strcpy( buf, "imgwid" ); break; }
         case 0x88: { strcpy( buf, "shrimg" ); break; }
         case 0xa0: { strcpy( buf, "addst" ); break; }
         case 0xac: case 0xb0: case 0xb4: case 0xb8: case 0xbc:
@@ -258,8 +259,8 @@ const char * DisassembleOI( uint8_t * pop, oi_t rpc, uint8_t image_width )
                         sprintf( buf, "ret %u", 1 + reg_from_op( op1 ) );
                     else if ( 3 == op1funct ) /* ldib r0 x */
                         sprintf( buf, "ldib %s, %d", RegOpString( op ), (int) sign_extend_oi( 0x1f & op1, 4 ) );
-                    else if ( 4 == op1funct ) /* sexp r0 */
-                        sprintf( buf, "sexb %s", RegOpString( op ) );
+                    else if ( 4 == op1funct ) /* signex r0 */
+                        sprintf( buf, "signex%s %s", WidthSuffix( width ), RegOpString( op ) );
                     else if ( 5 == op1funct ) /* memf */
                         sprintf( buf, "memf%s", WidthSuffix( width ) );
                     else if ( 6 == op1funct ) /* stadd */
@@ -384,7 +385,12 @@ const char * DisassembleOI( uint8_t * pop, oi_t rpc, uint8_t image_width )
                     if ( op1funct < 2 )
                         sprintf( buf, "call%s %s[ %s ]", ( 0 == op1funct ) ? "" : "nf", relative_value( pop, rpc, image_width ), RegOpString( op ) );
                     else if ( 2 == op1funct )
-                        sprintf( buf, "callnf %s + %s", relative_value( pop, rpc, image_width ), RegOpString( op ) );
+                    {
+                        if ( 0 == reg_from_op( op ) )
+                            sprintf( buf, "callnf %s", relative_value( pop, rpc, image_width ) );
+                        else
+                            sprintf( buf, "callnf %s + %s", relative_value( pop, rpc, image_width ), RegOpString( op ) );
+                    }
                 }
                 else if ( 4 == opfunct ) /* sto */
                 {

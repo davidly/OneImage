@@ -107,12 +107,12 @@
                 1: mov r0dst, r1src  later: use frame1 for conditional moves
                 2: cmpst r0dst, r1src, Relation -- r0dst = ( pop() Relation r1src )
                 3: - 0/1 frame: ldf/stf. loads and stores r0 relative to rframe. r1 >= 0 is is frame[ ( 3 + r1 ) * 2 ]. r1 < 0 is frame[ ( 1 + r1 ) * 2 ]
-                   - 2 frame: ret x
-                   - 3 frame: ldib x
-                   - 4 frame: sexb
-                   - 5 frame: memf. rarg1 = address, rarg2 = # of items to copy. rtmp = value to copy
-                   - 6 frame: stadd. stb [rtmp+rarg1] = 0. add rtmp, rarg2. loop if rtmp le rarg1
-                   - 7 frame: moddiv. r0 = r0 % r1. push( r0 / r1 ).
+                   - 2 frame: ret x     -- pop x items off the stack and return
+                   - 3 frame: ldib x    -- load immediate small signed values
+                   - 4 frame: signex    -- sign extend the specified width to the native width
+                   - 5 frame: memf. rarg1 = address, rarg2 = # of items to copy. rtmp = value to copy. -- memfill
+                   - 6 frame: stadd. stb [rtmp+rarg1] = 0. add rtmp, rarg2. loop if rtmp le rarg1 -- store and add in a loop
+                   - 7 frame: moddiv. r0 = r0 % r1. push( r0 / r1 ). -- calculate both mod and div
                 4:
                    - 0 frame: syscall ( ( reg of byte 0 << 3 ) | ( reg of byte 1 ) ). 6 bit system ID. bit width must be 0.
                    - 1 frame: pushf reg1CONSTANT. r1 >= 0 is is frame[ ( 3 + r1 ) * 2 ]. r1 < 0 is frame[ ( 1 + r1 ) * 2 ]
@@ -133,7 +133,7 @@
                 60 pop rzero  -- DON'T OVERRIDE
                 68 retnf      -- pop rsp (nf = no rframe restoration)
                 80 subst      -- zero rzero
-                84 UNUSED     -- zero rpc
+                84 imgwid     -- zero rpc. sets rres to the image width
                 88 shrimg     -- zero rsp
                 a0 addst      -- shl rzero
                 a4 UNUSED     -- shl rpc
@@ -199,7 +199,6 @@ static uint8_t ram[ 32767 ];
 #else
 #ifdef MSC6 /* DOS version is built with small memory model */
 static uint8_t ram[ 60000 ];
-#else
 #endif
 static uint8_t ram[ 8 * 1024 * 1024 ]; /* arbitrary */
 #endif
@@ -277,22 +276,39 @@ void TraceInstructionsOI( bool t )
 #endif
 
 #ifdef OLDCPU
-uint8_t * ResetOI( memSize, pc, imageWidth ) oi_t memSize; oi_t pc; uint8_t imageWidth;
+void ResetOI( memSize, pc, sp, imageWidth ) oi_t memSize; oi_t pc; oi_t sp; uint8_t imageWidth;
 #else
-uint8_t * ResetOI( oi_t memSize, oi_t pc, uint8_t imageWidth )
+void ResetOI( oi_t memSize, oi_t pc, oi_t sp, uint8_t imageWidth )
 #endif
 {
     memset( &g_oi, 0, sizeof( g_oi ) );
-    if ( memSize > sizeof( ram ) )
-        return 0;
     memset( ram, 0, (size_t) memSize );
     g_oi.rpc = pc;
-    g_oi.rsp = memSize;
+    g_oi.rsp = sp;
     g_oi.image_width = imageWidth;
     push( 0 );  /* rframe */
-    push( 0 );  /* return address */
-    return ram;
+    push( 0 );  /* return address is 0, which has a halt instruction */
+    g_oi.rframe = g_oi.rsp - sizeof( oi_t ); /* point frame at first local variable (if any) */
 } /* ResetOI */
+
+#ifdef OLDCPU
+uint32_t RamInformationOI( required, ppRam ) uint32_t required; uint8_t ** ppRam;
+#else
+uint32_t RamInformationOI( uint32_t required, uint8_t ** ppRam )
+#endif
+{
+    uint32_t available;
+
+    available = (uint32_t) sizeof( ram );
+    if ( ( 2 == sizeof( oi_t ) ) && ( available > 65536 ) )
+        available = 65536;
+
+    if ( available >= required )
+        *ppRam = ram;
+    else
+        *ppRam = 0;
+    return available;
+} /* RamInformationOI */
 
 #ifdef OLDCPU
 oi_t CheckRelation( l, r, relation ) ioi_t l; ioi_t r; uint8_t relation;
@@ -413,8 +429,13 @@ static void TraceState()
             g_oi.rpc, op, op1, op2, op3, g_oi.rres, g_oi.rtmp, g_oi.rarg1, g_oi.rarg2, g_oi.rframe, g_oi.rsp, tos );
 #endif
 #ifdef OI4
+#ifdef MSC6
+    trace( "rpc %08lx %02x %02x %02x %02x rres %lx rtmp %lx rarg1 %lx rarg2 %lx rframe %lx, rsp %lx tos %lx : ",
+            g_oi.rpc, op, op1, op2, op3, g_oi.rres, g_oi.rtmp, g_oi.rarg1, g_oi.rarg2, g_oi.rframe, g_oi.rsp, tos );
+#else
     trace( "rpc %08x %02x %02x %02x %02x rres %x rtmp %x rarg1 %x rarg2 %x rframe %x, rsp %x tos %x : ",
             g_oi.rpc, op, op1, op2, op3, g_oi.rres, g_oi.rtmp, g_oi.rarg1, g_oi.rarg2, g_oi.rframe, g_oi.rsp, tos );
+#endif
 #endif
 #ifdef OI8
     trace( "rpc %08llx %02x %02x %02x %02x rres %llx rtmp %llx rarg1 %llx rarg2 %llx rframe %llx, rsp %llx tos %llx : ",
@@ -831,6 +852,11 @@ uint32_t ExecuteOI()
                 g_oi.rres = val - g_oi.rres;
                 break;
             }
+            case 0x84: /* imgwid */
+            {
+                g_oi.rres = sizeof( oi_t );
+                break;
+            }
             case 0x8c: case 0x90: case 0x94: case 0x98: case 0x9c: /* zero r */
             {
                 set_reg_from_op( op, 0 );
@@ -1150,9 +1176,17 @@ uint32_t ExecuteOI()
                         set_reg_from_op( op, sign_extend_oi( op1 & 0x1f, 4 ) );
                         break;
                     }
-                    case 4: /* sexb */
+                    case 4: /* signex */
                     {
-                        set_reg_from_op( op, (oi_t) (ioi_t) (int8_t) get_reg_from_op( op ) );
+                        width = width_from_op( op1 );
+                        if ( 0 == width )
+                            set_reg_from_op( op, (oi_t) (ioi_t) (int8_t) get_reg_from_op( op ) );
+                        else if_1_is_width
+                            set_reg_from_op( op, (oi_t) (ioi_t) (int16_t) get_reg_from_op( op ) );
+#ifndef OI2
+                        else if_2_is_width
+                            set_reg_from_op( op, (oi_t) (ioi_t) (int32_t) get_reg_from_op( op ) );
+#endif
                         break;
                     }
                     case 5: /* memf: memfill address in rarg1 with rtmp for rarg2 iterations (bytes or words ) */

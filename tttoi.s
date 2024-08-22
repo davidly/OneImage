@@ -14,7 +14,7 @@ define win_score 6
 define tie_score 5
 define lose_score 4
 
-define iterations 10000
+define iterations 1
 
 define syscall_exit           0
 define syscall_print_string   1
@@ -26,12 +26,29 @@ define syscall_print_integer  2
     byte     board[ 9 ]
     align
     image_t  move_count
+    image_t  loop_count
     image_t  loops
     string   str_move_count " moves\n"
+    string   str_iterations " iterations\n"
 .dataend
 
 .code
 start:
+    ldi     rtmp, iterations
+    st      [loop_count], rtmp
+
+    ldf     rarg1, 0
+    ji      rarg1, 2, ne, _no_argument
+    ldf     rarg1, 1
+    imgwid
+    add     rarg1, rres
+    ld      rarg1, [rarg1]
+
+    call    atou
+    j       rres, rzero, eq, _no_argument
+    st      [loop_count], rres
+
+  _no_argument:
     ldi     rtmp, procs
     ldi     rres, 1
     shlimg
@@ -77,7 +94,7 @@ start:
 
     inc     [loops]
     ld      rres, [loops]
-    ldi     rtmp, iterations
+    ld      rtmp, [loop_count]
     j       rres, rtmp, ne, _start_again
 
     ld      rarg1, [move_count]
@@ -85,8 +102,43 @@ start:
     ldi     rarg1, str_move_count
     syscall syscall_print_string
 
+    ld      rarg1, [loop_count]
+    syscall syscall_print_integer
+    ldi     rarg1, str_iterations
+    syscall syscall_print_string
+
     ret                                     ; return to address 0 -- halt. both these methods work.
     syscall syscall_exit                    ; this system call does not return
+
+atou: ; string in arg1. result in rres
+        zero    rarg2                       ; running total is in rarg2
+
+  _skipspaces:
+        ldb     rtmp, [rarg1]
+        ldi     rres, 32
+        j       rtmp, rres, ne, _atouNext
+        inc     rarg1
+        jmp     _skipspaces
+
+  _atouNext:
+        ldb     rtmp, [rarg1]
+        ldi     rres, 48
+        j       rtmp, rres, lt, _atouDone
+        ldi     rres, 57
+        j       rtmp, rres, gt, _atouDone
+
+        ldi     rres, 10
+        mul     rarg2, rres
+
+        ldi     rres, 48
+        math    rtmp, rtmp, rres, sub
+        add     rarg2, rtmp
+        inc     rarg1
+        j       rzero, rzero, eq, _atouNext
+
+  _atouDone:
+        mov     rres, rarg2
+        ret
 
 runmm:
     zero    rarg2                           ; depth
