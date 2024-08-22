@@ -56,7 +56,9 @@ enum TokenTypes
     T_CMPST, T_PUSH, T_POP, T_PUSHF, T_STST, T_ZERO, T_SYSCALL, T_MODDIV,
     T_RZERO, T_RPC, T_RSP, T_RFRAME, T_RARG1, T_RARG2, T_RRES, T_RTMP,
     T_GT, T_LT, T_EQ, T_NE, T_GE, T_LE, T_MOV, T_RET, T_RETZERO, T_RETNF, T_RETZERONF, T_INV,
-    T_CSTF, T_MATHST, T_MATH, T_PLUS, T_IMGWID, T_CALLNF, T_CALL
+    T_CSTF, T_MATHST, T_MATH, T_PLUS, T_IMGWID, T_ADDIMGW, T_SUBIMGW,
+    T_SIGNEXB, T_SIGNEXW, T_SIGNEXDW,
+    T_CALLNF, T_CALL
 };
 
 static const char * TokenSet[] =
@@ -71,7 +73,9 @@ static const char * TokenSet[] =
     "CMPST", "PUSH", "POP", "PUSHF", "STST", "ZERO", "SYSCALL", "MODDIV",
     "RZERO", "RPC", "RSP", "RFRAME", "RARG1", "RARG2", "RRES", "RTMP",
     "GT", "LT", "EQ", "NE", "GE", "LE", "MOV", "RET", "RETZERO", "RETNF", "RETZERONF", "INV",
-    "CSTF", "MATHST", "MATH", "+", "IMGWID", "CALLNF", "CALL"
+    "CSTF", "MATHST", "MATH", "+", "IMGWID", "ADDIMGW", "SUBIMGW",
+    "SIGNEXB", "SIGNEXW", "SIGNEXDW",
+    "CALLNF", "CALL"
 };
 
 bool is_reg( size_t t ) { return ( t >= T_RZERO && t <= T_RTMP ); }
@@ -869,6 +873,20 @@ int cdecl main( int argc, char * argv[] )
                 code[ code_so_far++ ] = 0x84;
                 break;
             }
+            case T_ADDIMGW:
+            case T_SUBIMGW:
+            {
+                if ( 2 != token_count )
+                    show_error( "addimgw and subimgw take one register argument: addimgw reg\n" );
+
+                t1 = find_token( tokens[ 1 ] );
+                if ( !is_reg( t1 ) )
+                    show_error( "addimgw and subimgw take one register argument: addimgw reg\n" );
+
+                code[ code_so_far++ ] = compose_op( 4, reg_from_token( t1 ), 1 );
+                code[ code_so_far++ ] = compose_op( 3, 0, ( T_ADDIMGW == t ) ? 0 : 1 );
+                break;
+            }
             case T_STST:
             {
                 if ( 2 != token_count )
@@ -880,6 +898,21 @@ int cdecl main( int argc, char * argv[] )
 
                 code[ code_so_far++ ] = compose_op( 4, reg_from_token( t1 ), 1 );
                 code[ code_so_far++ ] = compose_op( 2, 0, 1 );
+                break;
+            }
+            case T_SIGNEXB:
+            case T_SIGNEXW:
+            case T_SIGNEXDW:
+            {
+                if ( 2 != token_count )
+                    show_error( "signex takes one register argument: signex reg\n" );
+
+                t1 = find_token( tokens[ 1 ] );
+                if ( !is_reg( t1 ) )
+                    show_error( "signex takes one register argument: signex reg\n" );
+
+                code[ code_so_far++ ] = compose_op( 3, reg_from_token( t1 ), 1 );
+                code[ code_so_far++ ] = compose_op( 4, 0, ( T_SIGNEXB == t ) ? 0 : ( T_SIGNEXW == t ) ? 1 : 2 );
                 break;
             }
             case T_PUSHF:
@@ -2307,10 +2340,15 @@ int cdecl main( int argc, char * argv[] )
             case T_SYSCALL:
             case T_PUSHF:
             case T_STST:
+            case T_ADDIMGW:
+            case T_SUBIMGW:
             case T_STB:
             case T_MEMF:
             case T_MEMFB:
             case T_STADDB:
+            case T_SIGNEXB:
+            case T_SIGNEXW:
+            case T_SIGNEXDW:
             {
                 code_so_far += 2;
                 break;

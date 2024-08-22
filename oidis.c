@@ -273,6 +273,7 @@ const char * DisassembleOI( uint8_t * pop, oi_t rpc, uint8_t image_width )
                 {
                     offset = (int16_t) reg_from_op( op1 );
                     op1funct = (uint8_t) funct_from_op( op1 );
+                    width = (uint8_t) width_from_op( op1 );
 
                     if ( 0 == op1funct ) /* syscall */
                     {
@@ -283,6 +284,10 @@ const char * DisassembleOI( uint8_t * pop, oi_t rpc, uint8_t image_width )
                         sprintf( buf, "pushf %d", (int16_t) offset );
                     else if ( 2 == op1funct ) /* stst reg0 with implied [pop()] target address */
                         sprintf( buf, "stst %s", RegOpString( op ) );
+                    else if ( 3 == op1funct && 0 == width ) /* addimgw reg0 */
+                        sprintf( buf, "addimgw %s", RegOpString( op ) );
+                    else if ( 3 == op1funct && 1 == width ) /* addimgw reg0 */
+                        sprintf( buf, "subimgw %s", RegOpString( op ) );
                 }
                 else if ( 0xa0 == opOperation ) /* st [r0dst] r1src */
                 {

@@ -174,7 +174,7 @@ void init_args_env( char * appname, int argc, char * argv[], int child_argc, int
     x = offset + ( 2 * sizeof( oi_t ) );                                    /* get past argv and penv to argv array */
     memcpy( & ram[ offset ], &x, sizeof( oi_t ) );                          /* argv */
     offset += sizeof( oi_t );
-    x = offset + (oi_t) ( ( child_argc + 1 ) * sizeof( oi_t ) );
+    x = offset + (oi_t) ( ( child_argc + 2 ) * sizeof( oi_t ) );
     memcpy( & ram[ offset ], &x, sizeof( oi_t ) );                          /* penv */
     x += sizeof( oi_t );                                                    /* reserve 1 blank environment entry */
     offset += sizeof( oi_t );

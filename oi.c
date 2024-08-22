@@ -15,6 +15,8 @@
 
     For now, Native Width must be the same as Image Width. To do: enable NW >= IW.
 
+    Operations: opcode bytes. op = first byte, op1 = next byte, op2 = folllowing byte
+
     Address 0:
         Address 0 contains a pointer to the syscall function.
         In the emulator, this is set to 0 and syscalls are handled directly.
@@ -26,9 +28,11 @@
 
     Registers (stored in bits 4..2):
         3 bit IDs 0..7 for rzero, rpc, rsp, rframe, rarg1, rarg2, rres, rtmp
+        referred to reg0, reg1, etc. for the reg field from op, op1, ...
 
     Function (stored in bits 7..5)
         Maps to Math, Relations, Operation, upper 3 bits of immediate
+        referred to funct0, funct1, etc. for the funct field from op, op1, ...
 
     Math (stored in bits 7..5):
         3 bit IDs 0..7 for add, sub, imul, idiv, or, xor, and, cmp
@@ -36,27 +40,11 @@
     Relation (stored in bits 7..5) 
         3 bit IDs 0..7 for gt, lt, eq, ne, ge, le
 
-    Operation (stored in bits 7..5 of first byte of two-byte operations):
-        3 bit IDs 0..7:
+    Operation: Another name for Function when it's not Math or Relation
 
-    Width:
+    Width
         2 lower bits 1..0 of byte 1 of 2 and 4 byte operations. 0 = byte, 1 = word, 2 = dword, 3 = qword
-
-    Frame:
-        3 upper bits of op1 for 2-byte operations
-            3 == When Operation in op0
-                0 ldf from rframe
-                1 stf from rframe
-                2 ret x. x is # of pops to execute to clean up stack. x is decoded as ( r1 + 1 ) * 2 )
-                3 ldib x. r0dst = x. x is the sign-extended signed lower 5 bits -16..15
-                4 sexb. sign extends lower byte in r0
-                5 memf is frame 5. rarg1 = array address, rarg2 = # of items (based on width) to fill. rtmp = value to copy. rres = first element to fill
-                6 stadd is frame 6. stb [rtmp+rarg1] = 0. add rtmp, rarg2. loop if rtmp le rarg1
-                7 moddiv is frame 7. r0 = r0 % r1. push( r0 / r1 ).
-            4 == When Operation in op0
-                0 syscall
-                1 pushf    -- pushes an argument or local variable on the stack
-                2 stst     -- stst reg0 -- st [pop()], reg0
+        when width doesn't apply to an instruction, this field can instead differentiate between instructions
 
     4 byte operations: (stored in bits 7..5 of first byte of four-byte operations):
       note: all addresses are pc-relative signed 16-bit values
@@ -106,21 +94,23 @@
                 0: Math r0dst r1src
                 1: mov r0dst, r1src  later: use frame1 for conditional moves
                 2: cmpst r0dst, r1src, Relation -- r0dst = ( pop() Relation r1src )
-                3: - 0/1 frame: ldf/stf. loads and stores r0 relative to rframe. r1 >= 0 is is frame[ ( 3 + r1 ) * 2 ]. r1 < 0 is frame[ ( 1 + r1 ) * 2 ]
-                   - 2 frame: ret x     -- pop x items off the stack and return
-                   - 3 frame: ldib x    -- load immediate small signed values
-                   - 4 frame: signex    -- sign extend the specified width to the native width
-                   - 5 frame: memf. rarg1 = address, rarg2 = # of items to copy. rtmp = value to copy. -- memfill
-                   - 6 frame: stadd. stb [rtmp+rarg1] = 0. add rtmp, rarg2. loop if rtmp le rarg1 -- store and add in a loop
-                   - 7 frame: moddiv. r0 = r0 % r1. push( r0 / r1 ). -- calculate both mod and div
+                3: - 0/1 funct: ldf/stf. loads and stores r0 relative to rframe. r1 >= 0 is is frame[ ( 3 + r1 ) * 2 ]. r1 < 0 is frame[ ( 1 + r1 ) * 2 ]
+                   - 2 funct: ret x     -- pop x items off the stack and return
+                   - 3 funct: ldib x    -- load immediate small signed values
+                   - 4 funct: signex    -- sign extend the specified width to the native width
+                   - 5 funct: memf. rarg1 = address, rarg2 = # of items to copy. rtmp = value to copy. -- memfill
+                   - 6 funct: stadd. stb [rtmp+rarg1] = 0. add rtmp, rarg2. loop if rtmp le rarg1 -- store and add in a loop
+                   - 7 funct: moddiv. r0 = r0 % r1. push( r0 / r1 ). -- calculate both mod and div
                 4:
-                   - 0 frame: syscall ( ( reg of byte 0 << 3 ) | ( reg of byte 1 ) ). 6 bit system ID. bit width must be 0.
-                   - 1 frame: pushf reg1CONSTANT. r1 >= 0 is is frame[ ( 3 + r1 ) * 2 ]. r1 < 0 is frame[ ( 1 + r1 ) * 2 ]
-                   - 2 frame: stst reg0.  i.e.  st [pop()], reg0
-                5: st [r0dst] r1src     later: lots of free frames. make conditionals?
-                6: ld r0dst [r1src]     later: lots of free frames. make contitionals?
+                   - 0 funct: syscall ( ( reg of byte 0 << 3 ) | ( reg of byte 1 ) ). 6 bit system ID. bit width must be 0.
+                   - 1 funct: pushf reg1CONSTANT. r1 >= 0 is is frame[ ( 3 + r1 ) * 2 ]. r1 < 0 is frame[ ( 1 + r1 ) * 2 ]
+                   - 2 funct: stst reg0.  i.e.  st [pop()], reg0
+                   - 3 funct: width 0: addimgw reg0
+                              width 1: subimgw reg0
+                5: st [r0dst] r1src     later: lots of free functs. make conditionals?
+                6: ld r0dst [r1src]     later: lots of free functs. make contitionals?
                 7: mathst r0dst, r1src, Math   -- r0dst = ( pop() MATH r1src )
-            byte 1: Math/Relation/Frame  r1 rhs          bit width ( 0=8, 1=16...)
+            byte 1: Math/Relation/Funct  r1 rhs          bit width ( 0=8, 1=16...)
 
         1 byte operations: high 3 bits 0..7 operate on reg0:   inc, dec, push, pop, zero, shl, shr, inv
             exceptions:          overridden
@@ -1147,7 +1137,7 @@ uint32_t ExecuteOI()
                 set_reg_from_op( op, CheckRelation( val, get_reg_from_op( op1 ), funct_from_op( op1 ) ) );
                 break;
             }
-            case 0x61: case 0x65: case 0x69: case 0x6d: /* ldf / stf / ret x / ldib / sexb / memf / stadd / moddiv */
+            case 0x61: case 0x65: case 0x69: case 0x6d: /* ldf / stf / ret x / ldib / signex / memf / stadd / moddiv */
             case 0x71: case 0x75: case 0x79: case 0x7d:
             {
                 op1 = get_op1();
@@ -1231,18 +1221,20 @@ uint32_t ExecuteOI()
                 }
                 break;
             }
-            case 0x81: case 0x85: case 0x89: case 0x8d: /* syscall, pushf, stst */
+            case 0x81: case 0x85: case 0x89: case 0x8d: /* syscall, pushf, stst, addimgw, subimgw */
             case 0x91: case 0x95: case 0x99: case 0x9d:
             {
                 op1 = get_op1();
                 switch( funct_from_op( op1 ) ) 
                 {
                     case 0: /* syscall */
+                    {
                         val = g_oi.rpc;
                         OISyscall( ( ( op << 1 ) & 0x38 ) | ( ( op1 >> 2 ) & 7 ) );
                         if ( g_oi.rpc != val )
                             continue;
                         break;
+                    }
                     case 1: /* pushf offset */
                     {
                         push( get_oiword( frame_offset( (int16_t) reg_from_op( op1 ) ) ) );
@@ -1252,6 +1244,15 @@ uint32_t ExecuteOI()
                     {
                         pop( val );
                         set_oiword( val, get_reg_from_op( op ) );
+                        break;
+                    }
+                    case 3: /* addimgw reg0 if width=0, subimgw if width=1 */
+                    {
+                        width = width_from_op( op1 );
+                        if ( 0 == width )
+                            set_reg_from_op( op, get_reg_from_op( op ) + (oi_t) sizeof( oi_t ) );
+                        else if ( 1 == width )
+                            set_reg_from_op( op, get_reg_from_op( op ) - (oi_t) sizeof( oi_t ) );
                         break;
                     }
                 }
