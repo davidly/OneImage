@@ -242,7 +242,13 @@ const char * DisassembleOI( uint8_t * pop, oi_t rpc, uint8_t image_width )
                 if ( 0 == opOperation )
                     sprintf( buf,  "%s %s, %s", MathString( funct_from_op( op1 ) ), RegOpString( op ), RegOpString( op1 ) );
                 else if ( 0x20 == opOperation )
-                    sprintf( buf, "mov %s, %s", RegOpString( op ), RegOpString( op1 ) );
+                {
+                    op1funct = funct_from_op( op1 );
+                    if ( 3 == op1funct ) /* ne -- not conditional, just a mov */
+                        sprintf( buf, "mov %s, %s", RegOpString( op ), RegOpString( op1 ) );
+                    else
+                        sprintf( buf, "cmov %s, %s, %s", RegOpString( op ), RegOpString( op1 ), RelationString( op1funct ) );
+                }
                 else if ( 0x40 == opOperation ) 
                     sprintf( buf, "cmpst %s, %s, %s", RegOpString( op ), RegOpString( op1 ), RelationString( funct_from_op( op1 ) ) );
                 else if ( 0x60 == opOperation )
@@ -284,10 +290,13 @@ const char * DisassembleOI( uint8_t * pop, oi_t rpc, uint8_t image_width )
                         sprintf( buf, "pushf %d", (int16_t) offset );
                     else if ( 2 == op1funct ) /* stst reg0 with implied [pop()] target address */
                         sprintf( buf, "stst %s", RegOpString( op ) );
-                    else if ( 3 == op1funct && 0 == width ) /* addimgw reg0 */
-                        sprintf( buf, "addimgw %s", RegOpString( op ) );
-                    else if ( 3 == op1funct && 1 == width ) /* addimgw reg0 */
-                        sprintf( buf, "subimgw %s", RegOpString( op ) );
+                    else if ( 3 == op1funct )
+                    {
+                        if ( 0 == width ) /* addimgw reg0 */
+                            sprintf( buf, "addimgw %s", RegOpString( op ) );
+                        else if ( 1 == width ) /* addimgw reg0 */
+                            sprintf( buf, "subimgw %s", RegOpString( op ) );
+                    }
                 }
                 else if ( 0xa0 == opOperation ) /* st [r0dst] r1src */
                 {
@@ -410,6 +419,8 @@ const char * DisassembleOI( uint8_t * pop, oi_t rpc, uint8_t image_width )
                         sprintf( buf, "ldo%s %s, %s[%s]", WidthSuffix( width ), RegOpString( op ), relative_value( pop, rpc, image_width ), RegOpString( op1 ) );
                     else if ( 1 == op1funct )
                         sprintf( buf, "ldoinc%s %s, %s[%s]", WidthSuffix( width ), RegOpString( op ), relative_value( pop, rpc, image_width ), RegOpString( op1 ) );
+                    else if ( 2 == op1funct )
+                        sprintf( buf, "ldi %s, %d", RegOpString( op ), (int) (int16_t) getword( pop + 2 ) );
                 }
                 else if ( 6 == opfunct ) /* ldb r0dst, [address] */
                 {

@@ -70,6 +70,7 @@
         5:  value of funct in op1
             0:   ldo / ldob:          r0dst = address[ r1off ]. offset is multiplied by width
             1:   ldoinc / ldoincb:    r1++ then r0dst = address[ r1off ]. offset is multiplied by width
+            2:   ldi constant -32768..32767 sign extended. use ldb if possible and ldi's 3-byte form if the number is large or a 2-byte native width
         6:  value of funct in op1
             0:   ld / ldb:     r0dst = [ address ]
             1:   sti / stib:   [address ], r1 -8..7
@@ -92,8 +93,9 @@
                     7..5                 4..2            1..0
             byte 0: Operation            r0 lhs          01
                 0: Math r0dst r1src
-                1: mov r0dst, r1src  later: use frame1 for conditional moves
-                2: cmpst r0dst, r1src, Relation -- r0dst = ( pop() Relation r1src )
+                1: cmov r0dst, r1src, Relation. if ( r0dst Relation r1src ) r0dst = rssrc.
+                   mov r0dst, r1src     -- this maps to cmov r0dst, r1src, ne
+                2: cmpst r0dst, r1src, Relation -- r0dst = ( pop() Relation r1src ). sets r0dst to a boolean 1 or 0
                 3: - 0/1 funct: ldf/stf. loads and stores r0 relative to rframe. r1 >= 0 is is frame[ ( 3 + r1 ) * 2 ]. r1 < 0 is frame[ ( 1 + r1 ) * 2 ]
                    - 2 funct: ret x     -- pop x items off the stack and return
                    - 3 funct: ldib x    -- load immediate small signed values
@@ -337,12 +339,12 @@ oi_t Math( oi_t l, oi_t r, uint8_t math )
     {
         case 0: { return l + r; }
         case 1: { return l - r; }
-        case 2: { return l * r; }
-        case 3: { return l / r; }
+        case 2: { return (ioi_t) l * (ioi_t) r; }
+        case 3: { return (ioi_t) l / (ioi_t) r; }
         case 4: { return l | r; }
         case 5: { return l ^ r; }
         case 6: { return l & r; }
-        case 7: { return l != r; }
+        case 7: { return l != r; }         /* true if !=, false if =. ( 0 != ( left - right ) ) */
         default: { __assume( false ); }
     }
 
@@ -553,30 +555,36 @@ static void ldo_do( opcode_t op )
 {
     size_t op1;
     oi_t val;
-    uint8_t width;
+    uint8_t width, funct1;
     ioi_t ival;
 
     op1 = get_op1();
     ival = (ioi_t) (int16_t) get_word( g_oi.rpc + 2 );
+    funct1 = funct_from_op( op1 );
 
-    if ( 1 == funct_from_op( op1 ) ) /* pre-increment register for inc variants */
-        inc_reg_from_op( op1 );
-
-    width = (uint8_t) width_from_op( op1 );
-    val = g_oi.rpc + ival + ( ( (oi_t) 1 << width ) * get_reg_from_op( op1 ) );
-
-    if ( (oi_t) 0 == width )
-        set_reg_from_op( op, get_byte( val ) ); /* ldob */
-    else if_1_is_width
-        set_reg_from_op( op, get_word( val ) ); /* ldow */
+    if ( 2 == funct1 )
+        set_reg_from_op( op, (oi_t) ival );
+    else /* funct1 is 1 or 2 */
+    {
+        if ( 1 == funct1 ) /* pre-increment register for inc variants */
+            inc_reg_from_op( op1 );
+    
+        width = (uint8_t) width_from_op( op1 );
+        val = g_oi.rpc + ival + ( ( (oi_t) 1 << width ) * get_reg_from_op( op1 ) );
+    
+        if ( (oi_t) 0 == width )
+            set_reg_from_op( op, get_byte( val ) ); /* ldob */
+        else if_1_is_width
+            set_reg_from_op( op, get_word( val ) ); /* ldow */
 #ifndef OI2
-    else if_2_is_width
-        set_reg_from_op( op, get_dword( val ) ); /* ldodw */
+        else if_2_is_width
+            set_reg_from_op( op, get_dword( val ) ); /* ldodw */
 #ifdef OI8
-    else
-        set_reg_from_op( op, get_qword( val ) ); /* ldoqw */
+        else
+            set_reg_from_op( op, get_qword( val ) ); /* ldoqw */
 #endif
 #endif
+    }
 } /* ldo_do */
 
 #ifdef OLDCPU
@@ -751,6 +759,51 @@ void sto_do( opcode_t op )
 #endif
 #endif
 } /* sto_do */
+
+#ifdef OLDCPU
+bool op_80_90_do( op ) opcode_t op;
+#else
+bool op_80_90_do( opcode_t op )
+#endif
+{
+    opcode_t op1, width;
+    oi_t val;
+
+    op1 = get_op1();
+    switch( funct_from_op( op1 ) ) 
+    {
+        case 0: /* syscall */
+        {
+            val = g_oi.rpc;
+            OISyscall( ( ( op << 1 ) & 0x38 ) | ( ( op1 >> 2 ) & 7 ) );
+            if ( g_oi.rpc != val )
+                return true;
+            break;
+        }
+        case 1: /* pushf offset */
+        {
+            push( get_oiword( frame_offset( (int16_t) reg_from_op( op1 ) ) ) );
+            break;
+        }
+        case 2: /* stst [reg0] */
+        {
+            pop( val );
+            set_oiword( val, get_reg_from_op( op ) );
+            break;
+        }
+        case 3: /* addimgw reg0 if width=0, subimgw if width=1, ldi if width=2 */
+        {
+            width = width_from_op( op1 );
+            if ( 0 == width )
+                set_reg_from_op( op, get_reg_from_op( op ) + (oi_t) sizeof( oi_t ) );
+            else if ( 1 == width )
+                set_reg_from_op( op, get_reg_from_op( op ) - (oi_t) sizeof( oi_t ) );
+            break;
+        }
+    }
+
+    return false;
+} /* op_80_90_do */
 
 uint32_t ExecuteOI()
 {
@@ -1049,7 +1102,7 @@ uint32_t ExecuteOI()
                 sto_do( op );
                 break;
             }
-            case 0xa3: case 0xa7: case 0xab: case 0xaf: /* ldo / ldob / ldoinc / ldoincb */
+            case 0xa3: case 0xa7: case 0xab: case 0xaf: /* ldo / ldob / ldoinc / ldoincb / ldi */
             case 0xb3: case 0xb7: case 0xbb: case 0xbf:
             {
                 ldo_do( op );
@@ -1109,7 +1162,7 @@ uint32_t ExecuteOI()
                 }
                 break;
             }
-            case 0xe3: case 0xe7: case 0xeb: case 0xef: /* cstf r0left, r1right, function1REL, reg2FRAMEOFFSET */
+            case 0xe3: case 0xe7: case 0xeb: case 0xef: /* cstf r0left, r1right, funct1REL, reg2FRAMEOFFSET */
             case 0xf3: case 0xf7: case 0xfb: case 0xff: /* fourth byte is currently unused */
             {
                 cstf_do( op );
@@ -1122,10 +1175,13 @@ uint32_t ExecuteOI()
                 set_reg_from_op( op, Math( get_reg_from_op( op ), get_reg_from_op( op1 ), funct_from_op( op1 ) ) );
                 break;
             }
-            case 0x21: case 0x25: case 0x29: case 0x2d: /* mov r0dst, r1src */
+            case 0x21: case 0x25: case 0x29: case 0x2d: /* mov r0dst, r1src / cmov r0dst, r1src, funct1REL */
             case 0x31: case 0x35: case 0x39: case 0x3d:
             {
-                set_reg_from_op( op, get_reg_from_op( get_op1() ) );
+                op1 = get_op1();
+                if ( ( (uint8_t) 3 == funct_from_op( op1 ) ) || /* shortcut for NE */
+                     ( CheckRelation( get_reg_from_op( op ), get_reg_from_op( op1 ), funct_from_op( op1 ) ) ) )
+                    set_reg_from_op( op, get_reg_from_op( op1 ) );
                 break;
             }
             case 0x41: case 0x45: case 0x49: case 0x4d: /* cmpst rdst, rright, relation */
@@ -1170,7 +1226,11 @@ uint32_t ExecuteOI()
                     {
                         width = width_from_op( op1 );
                         if ( 0 == width )
+#ifdef AZTECCPM
+                            set_reg_from_op( op, sign_extend_oi( get_reg_from_op( op ), 7 ) ); /* the casts below don't work with Aztec C */
+#else
                             set_reg_from_op( op, (oi_t) (ioi_t) (int8_t) get_reg_from_op( op ) );
+#endif
                         else if_1_is_width
                             set_reg_from_op( op, (oi_t) (ioi_t) (int16_t) get_reg_from_op( op ) );
 #ifndef OI2
@@ -1224,38 +1284,8 @@ uint32_t ExecuteOI()
             case 0x81: case 0x85: case 0x89: case 0x8d: /* syscall, pushf, stst, addimgw, subimgw */
             case 0x91: case 0x95: case 0x99: case 0x9d:
             {
-                op1 = get_op1();
-                switch( funct_from_op( op1 ) ) 
-                {
-                    case 0: /* syscall */
-                    {
-                        val = g_oi.rpc;
-                        OISyscall( ( ( op << 1 ) & 0x38 ) | ( ( op1 >> 2 ) & 7 ) );
-                        if ( g_oi.rpc != val )
-                            continue;
-                        break;
-                    }
-                    case 1: /* pushf offset */
-                    {
-                        push( get_oiword( frame_offset( (int16_t) reg_from_op( op1 ) ) ) );
-                        break;
-                    }
-                    case 2: /* stst [reg0] */
-                    {
-                        pop( val );
-                        set_oiword( val, get_reg_from_op( op ) );
-                        break;
-                    }
-                    case 3: /* addimgw reg0 if width=0, subimgw if width=1 */
-                    {
-                        width = width_from_op( op1 );
-                        if ( 0 == width )
-                            set_reg_from_op( op, get_reg_from_op( op ) + (oi_t) sizeof( oi_t ) );
-                        else if ( 1 == width )
-                            set_reg_from_op( op, get_reg_from_op( op ) - (oi_t) sizeof( oi_t ) );
-                        break;
-                    }
-                }
+                if ( op_80_90_do( op ) )
+                    continue;
                 break;
             }
             case 0xa1: case 0xa5: case 0xa9: case 0xad: /* st / stb [r0dst] r1src */

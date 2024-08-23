@@ -55,7 +55,7 @@ enum TokenTypes
     T_INC, T_DEC, T_JMP, T_ADDST, T_SUBST, T_IDIVST, T_IMULST,
     T_CMPST, T_PUSH, T_POP, T_PUSHF, T_STST, T_ZERO, T_SYSCALL, T_MODDIV,
     T_RZERO, T_RPC, T_RSP, T_RFRAME, T_RARG1, T_RARG2, T_RRES, T_RTMP,
-    T_GT, T_LT, T_EQ, T_NE, T_GE, T_LE, T_MOV, T_RET, T_RETZERO, T_RETNF, T_RETZERONF, T_INV,
+    T_GT, T_LT, T_EQ, T_NE, T_GE, T_LE, T_MOV, T_CMOV, T_RET, T_RETZERO, T_RETNF, T_RETZERONF, T_INV,
     T_CSTF, T_MATHST, T_MATH, T_PLUS, T_IMGWID, T_ADDIMGW, T_SUBIMGW,
     T_SIGNEXB, T_SIGNEXW, T_SIGNEXDW,
     T_CALLNF, T_CALL
@@ -72,7 +72,7 @@ static const char * TokenSet[] =
     "INC", "DEC", "JMP", "ADDST", "SUBST", "IDIVST", "IMULST",
     "CMPST", "PUSH", "POP", "PUSHF", "STST", "ZERO", "SYSCALL", "MODDIV",
     "RZERO", "RPC", "RSP", "RFRAME", "RARG1", "RARG2", "RRES", "RTMP",
-    "GT", "LT", "EQ", "NE", "GE", "LE", "MOV", "RET", "RETZERO", "RETNF", "RETZERONF", "INV",
+    "GT", "LT", "EQ", "NE", "GE", "LE", "MOV", "CMOV", "RET", "RETZERO", "RETNF", "RETZERONF", "INV",
     "CSTF", "MATHST", "MATH", "+", "IMGWID", "ADDIMGW", "SUBIMGW",
     "SIGNEXB", "SIGNEXW", "SIGNEXDW",
     "CALLNF", "CALL"
@@ -436,7 +436,7 @@ width_t number_or_define( const char * p )
 {
     if ( is_number( p ) )
 #ifdef MSC6
-        return atoi( p );
+        return atol( p );
 #else
         return strtoll( p, 0, 10 );
 #endif
@@ -743,7 +743,7 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_number( tokens[ 2 ] ) )
                     show_error( "second argument must be a number" );
 
-                add_define( tokens[ 1 ], (uint16_t) atoi( tokens[ 2 ] ) );
+                add_define( tokens[ 1 ], (width_t) atol( tokens[ 2 ] ) );
                 break;
             }
             case T_BYTE:
@@ -1344,39 +1344,16 @@ int cdecl main( int argc, char * argv[] )
                 break;
             }
             case T_ADD:
-            {
-                if ( 3 != token_count )
-                    show_error( "add takes two arguments" );
-                t1 = find_token( tokens[ 1 ] );
-                if ( !is_reg( t1 ) )
-                    show_error( "register expected as first argument" );
-                t2 = find_token( tokens[ 2 ] );
-                if ( !is_reg( t2 ) )
-                    show_error( "register expected as second argument" );
-
-                code[ code_so_far++ ] = compose_op( 0, reg_from_token( t1 ), 1 );
-                code[ code_so_far++ ] = compose_op( 0, reg_from_token( t2 ), 0 );
-                break;
-            }
-            case T_DIV:
-            {
-                if ( 3 != token_count )
-                    show_error( "div takes two arguments" );
-                t1 = find_token( tokens[ 1 ] );
-                if ( !is_reg( t1 ) )
-                    show_error( "register expected as first argument" );
-                t2 = find_token( tokens[ 2 ] );
-                if ( !is_reg( t2 ) )
-                    show_error( "register expected as second argument" );
-
-                code[ code_so_far++ ] = compose_op( 0, reg_from_token( t1 ), 1 );
-                code[ code_so_far++ ] = compose_op( 3, reg_from_token( t2 ), 0 );
-                break;
-            }
+            case T_SUB:
             case T_MUL:
+            case T_DIV:
+            case T_OR:
+            case T_XOR:
+            case T_AND:
+            case T_CMP:
             {
                 if ( 3 != token_count )
-                    show_error( "mul takes two arguments" );
+                    show_error( "<math instruction> takes two arguments" );
                 t1 = find_token( tokens[ 1 ] );
                 if ( !is_reg( t1 ) )
                     show_error( "register expected as first argument" );
@@ -1385,7 +1362,7 @@ int cdecl main( int argc, char * argv[] )
                     show_error( "register expected as second argument" );
 
                 code[ code_so_far++ ] = compose_op( 0, reg_from_token( t1 ), 1 );
-                code[ code_so_far++ ] = compose_op( 2, reg_from_token( t2 ), 0 );
+                code[ code_so_far++ ] = compose_op( math_from_token( t ), reg_from_token( t2 ), 0 );
                 break;
             }
             case T_MODDIV:
@@ -1778,15 +1755,22 @@ int cdecl main( int argc, char * argv[] )
                 if ( ! ( ( T_INVALID == t2 ) || is_number( tokens[ 2 ] ) || T_DEFINE == t2 ) )
                     show_error( "number, define, or label expected as second argument" );
 
-                if ( is_number( tokens[ 2 ] ) )
-                    ival = (int16_t) atoi( tokens[ 2 ] );
-                else if ( define_exists( tokens[ 2 ] ) )
-                    ival = get_define( tokens[ 2 ] );
+                if ( is_number( tokens[ 2 ] ) || define_exists( tokens[ 2 ] ) )
+                    ival = number_or_define( tokens[ 2 ] );
                 else
                     ival = 0; /* placeholder */
 
-                code[ code_so_far++ ] = compose_op( 1, reg_from_token( t1 ), 2 );
-                initialize_image_value( & code_so_far, ival );
+                if ( ( g_image_width > (uint8_t) 2 ) && ( (iwidth_t) 0 != ival ) && ( ival > -32768 ) && ( ival < 32767 ) )
+                {
+                    code[ code_so_far++ ] = compose_op( 5, reg_from_token( t1 ), 3 );
+                    code[ code_so_far++ ] = compose_op( 2, 0, 1 );
+                    initialize_word_value( & code_so_far, ival );
+                }
+                else
+                {
+                    code[ code_so_far++ ] = compose_op( 1, reg_from_token( t1 ), 2 );
+                    initialize_image_value( & code_so_far, ival );
+                }
                 break;
             }
             case T_CMPST:
@@ -1847,7 +1831,24 @@ int cdecl main( int argc, char * argv[] )
                     show_error( "mov takes 2 register arguments" );
 
                 code[ code_so_far++ ] = compose_op( 1, reg_from_token( t1 ), 1 );
-                code[ code_so_far++ ] = compose_op( 0, reg_from_token( t2 ), 0 );
+                code[ code_so_far++ ] = compose_op( 3, reg_from_token( t2 ), 0 ); /* 3 is NE */
+                break;
+            }
+            case T_CMOV:
+            {
+                if ( 4 != token_count )
+                    show_error( "cmov takes 2 register the one relation arguments" );
+                t1 = find_token( tokens[ 1 ] );
+                t2 = find_token( tokens[ 2 ] );
+                if ( !is_reg( t1 ) || !is_reg( t2 ) )
+                    show_error( "cmov takes 2 register arguments" );
+
+                t3 = find_token( tokens[ 3 ] );
+                if ( !is_relation_token( t3 ) )
+                    show_error( "cmov takes a relation as the third argument" );
+
+                code[ code_so_far++ ] = compose_op( 1, reg_from_token( t1 ), 1 );
+                code[ code_so_far++ ] = compose_op( relation_from_token( t3 ), reg_from_token( t2 ), 0 );
                 break;
             }
             case T_INV:
@@ -2240,7 +2241,17 @@ int cdecl main( int argc, char * argv[] )
                     initialize_image_value( & code_so_far, val );
                 }
                 else
-                    code_so_far += g_image_width;
+                {
+                    if ( is_number( tokens[ 2 ] ) || define_exists( tokens[ 2 ] ) )
+                        ival = number_or_define( tokens[ 2 ] );
+                    else
+                        ival = 0; /* placeholder */
+
+                    if ( ( g_image_width > (uint8_t) 2 ) && ( (width_t) 0 != ival ) && ( ival > -32768 ) && ( ival < 32767 ) )
+                        code_so_far += 3;
+                    else
+                        code_so_far += g_image_width;
+                }
                 break;
             }
             case T_LDOINCB:
@@ -2333,10 +2344,16 @@ int cdecl main( int argc, char * argv[] )
             case T_CMPST:
             case T_MATHST:
             case T_MOV:
-            case T_ADD:
-            case T_MUL:
+            case T_CMOV:
             case T_MODDIV:
+            case T_ADD:
+            case T_SUB:
+            case T_MUL:
             case T_DIV:
+            case T_OR:
+            case T_XOR:
+            case T_AND:
+            case T_CMP:
             case T_SYSCALL:
             case T_PUSHF:
             case T_STST:
