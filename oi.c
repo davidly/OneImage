@@ -69,7 +69,7 @@
         4:  sto / stob:        address[ r1offset ] = r0value. offset is multiplied by width
         5:  value of funct in op1
             0:   ldo / ldob:          r0dst = address[ r1off ]. offset is multiplied by width
-            1:   ldoinc / ldoincb:    r1++ then r0dst = address[ r1off ]. offset is multiplied by width
+            1:   ldoinc / ldoincb:    r1++ (always one independent of width) then r0dst = address[ r1off ]. offset is multiplied by width
             2:   ldi constant -32768..32767 sign extended. use ldb if possible and ldi's 3-byte form if the number is large or a 2-byte native width
         6:  value of funct in op1
             0:   ld / ldb:     r0dst = [ address ]
@@ -572,7 +572,7 @@ static void ldo_do( opcode_t op )
             inc_reg_from_op( op1 );
     
         width = (uint8_t) width_from_op( op1 );
-        val = g_oi.rpc + ival + ( ( (oi_t) 1 << width ) * get_reg_from_op( op1 ) );
+        val = g_oi.rpc + ival + ( get_reg_from_op( op1 ) << width );
     
         if ( (oi_t) 0 == width )
             set_reg_from_op( op, get_byte( val ) ); /* ldob */
@@ -1375,7 +1375,7 @@ uint32_t ExecuteOI()
 #else
         byte_len = 1 + byte_len_from_op( op );
         if ( 3 == byte_len )
-            byte_len += ( sizeof( oi_t ) - 2 );
+            byte_len = 1 + sizeof( oi_t );
         g_oi.rpc += (oi_t) byte_len;
 #endif
 

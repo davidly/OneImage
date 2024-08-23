@@ -1803,7 +1803,7 @@ int cdecl main( int argc, char * argv[] )
                     show_error( "swap takes two registers as arguments" );
 
                 code[ code_so_far++ ] = compose_op( 4, reg_from_token( t1 ), 1 );
-                code[ code_so_far++ ] = compose_op( 5, reg_from_token( t2 ), g_byte_len );
+                code[ code_so_far++ ] = compose_op( 5, reg_from_token( t2 ), 0 ); /* swap full registers, other widths can be overridden */
                 break;
             }
             case T_CMPST:
