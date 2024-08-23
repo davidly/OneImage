@@ -109,6 +109,8 @@
                    - 2 funct: stst reg0.  i.e.  st [pop()], reg0
                    - 3 funct: width 0: addimgw reg0
                               width 1: subimgw reg0
+                   - 4 funct: stinc [reg0], reg1 then increment reg0 by width of store
+                   - 5 funct: swap reg0, reg1
                 5: st [r0dst] r1src     later: lots of free functs. make conditionals?
                 6: ld r0dst [r1src]     later: lots of free functs. make contitionals?
                 7: mathst r0dst, r1src, Math   -- r0dst = ( pop() MATH r1src )
@@ -709,6 +711,36 @@ void stinc_do( opcode_t op )
 } /* stinc_do */
 
 #ifdef OLDCPU
+void stinc_reg_do( op ) opcode_t op;
+#else
+void stinc_reg_do( opcode_t op )
+#endif
+{
+    uint8_t width;
+    oi_t inc_amount, val;
+    opcode_t op1;
+
+    op1 = get_op1();
+    val = get_reg_from_op( op1 );
+    width = (uint8_t) width_from_op( get_op1() );
+    if ( 0 == width )
+        set_byte( get_reg_from_op( op ), (uint8_t) val );
+    else if_1_is_width
+        set_word( get_reg_from_op( op ), (uint16_t) val );
+#ifndef OI2
+    else if_2_is_width
+        set_dword( get_reg_from_op( op ), (uint32_t) val );
+#ifdef OI8
+    else /* 3 == width */
+        set_qword( get_reg_from_op( op ), val );
+#endif
+#endif
+
+    inc_amount = (oi_t) ( 1 << width );
+    add_reg_from_op( op, inc_amount );
+} /* stinc_reg_do */
+
+#ifdef OLDCPU
 void st_do( op ) opcode_t op;
 #else
 void st_do( opcode_t op )
@@ -798,6 +830,18 @@ bool op_80_90_do( opcode_t op )
                 set_reg_from_op( op, get_reg_from_op( op ) + (oi_t) sizeof( oi_t ) );
             else if ( 1 == width )
                 set_reg_from_op( op, get_reg_from_op( op ) - (oi_t) sizeof( oi_t ) );
+            break;
+        }
+        case 4: /* stinc [reg0], reg1  -- then increment reg0 by width of store */
+        {
+            stinc_reg_do( op );
+            break;
+        }
+        case 5: /* swap reg0, reg1 */
+        {
+            val = get_reg_from_op( op );
+            set_reg_from_op( op, get_reg_from_op( op1 ) );
+            set_reg_from_op( op1, val );
             break;
         }
     }

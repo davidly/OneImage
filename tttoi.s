@@ -50,35 +50,24 @@ start:
 
   _no_argument:
     ldi     rtmp, procs
-    ldi     rres, 1
-    shlimg
     ldi     rarg1, proc0
-    st      rtmp, rarg1
-    add     rtmp, rres
+    stinc   rtmp, rarg1
     ldi     rarg1, proc1
-    st      rtmp, rarg1
-    add     rtmp, rres
+    stinc   rtmp, rarg1
     ldi     rarg1, proc2
-    st      rtmp, rarg1
-    add     rtmp, rres
+    stinc   rtmp, rarg1
     ldi     rarg1, proc3
-    st      rtmp, rarg1
-    add     rtmp, rres
+    stinc   rtmp, rarg1
     ldi     rarg1, proc4
-    st      rtmp, rarg1
-    add     rtmp, rres
+    stinc   rtmp, rarg1
     ldi     rarg1, proc5
-    st      rtmp, rarg1
-    add     rtmp, rres
+    stinc   rtmp, rarg1
     ldi     rarg1, proc6
-    st      rtmp, rarg1
-    add     rtmp, rres
+    stinc   rtmp, rarg1
     ldi     rarg1, proc7
-    st      rtmp, rarg1
-    add     rtmp, rres
+    stinc   rtmp, rarg1
     ldi     rarg1, proc8
-    st      rtmp, rarg1
-    add     rtmp, rres
+    stinc   rtmp, rarg1
 
   _start_again:
     st      [move_count], rzero
@@ -207,9 +196,7 @@ minmax_max:
     ldf     rres, 1                         ; load alpha
     j       rarg1, rres, le, _max_loop
     stf     rarg1, 1                        ; update alpha with value
-; fewer instructions but more are executed    cstf    rarg1, rres, gt, 1              ; update alpha with value if warranted
     j       rzero, rzero, eq, _max_loop
-;    jmp     _max_loop
 
   _max_return_value:
     mov     rres, rarg1
@@ -271,7 +258,6 @@ minmax_min:
     j       rarg1, rres, ge, _min_loop
     stf     rarg1, 0                        ; update beta with value
     j       rzero, rzero, eq, _min_loop
-;    jmp     _min_loop
 
   _min_return_value:
     mov     rres, rarg1

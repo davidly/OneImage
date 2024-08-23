@@ -297,6 +297,10 @@ const char * DisassembleOI( uint8_t * pop, oi_t rpc, uint8_t image_width )
                         else if ( 1 == width ) /* addimgw reg0 */
                             sprintf( buf, "subimgw %s", RegOpString( op ) );
                     }
+                    else if ( 4 == op1funct ) /* stinc [reg0], reg1 -- then increment reg0 by store width */
+                        sprintf( buf, "stinc%s [%s], %s", WidthSuffix( width ), RegOpString( op ), RegOpString( op1 ) );
+                    else if ( 5 == op1funct ) /* swap reg0, reg1 */
+                        sprintf( buf, "swap %s, %s", RegOpString( op ), RegOpString( op1 ) );
                 }
                 else if ( 0xa0 == opOperation ) /* st [r0dst] r1src */
                 {

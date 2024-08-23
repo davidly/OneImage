@@ -57,7 +57,7 @@ enum TokenTypes
     T_RZERO, T_RPC, T_RSP, T_RFRAME, T_RARG1, T_RARG2, T_RRES, T_RTMP,
     T_GT, T_LT, T_EQ, T_NE, T_GE, T_LE, T_MOV, T_CMOV, T_RET, T_RETZERO, T_RETNF, T_RETZERONF, T_INV,
     T_CSTF, T_MATHST, T_MATH, T_PLUS, T_IMGWID, T_ADDIMGW, T_SUBIMGW,
-    T_SIGNEXB, T_SIGNEXW, T_SIGNEXDW,
+    T_SIGNEXB, T_SIGNEXW, T_SIGNEXDW, T_SWAP,
     T_CALLNF, T_CALL
 };
 
@@ -74,7 +74,7 @@ static const char * TokenSet[] =
     "RZERO", "RPC", "RSP", "RFRAME", "RARG1", "RARG2", "RRES", "RTMP",
     "GT", "LT", "EQ", "NE", "GE", "LE", "MOV", "CMOV", "RET", "RETZERO", "RETNF", "RETZERONF", "INV",
     "CSTF", "MATHST", "MATH", "+", "IMGWID", "ADDIMGW", "SUBIMGW",
-    "SIGNEXB", "SIGNEXW", "SIGNEXDW",
+    "SIGNEXB", "SIGNEXW", "SIGNEXDW", "SWAP",
     "CALLNF", "CALL"
 };
 
@@ -140,7 +140,10 @@ void * my_malloc( int cb )
     void * p;
     p = malloc( cb );
     if ( 0 == p )
+    {
+        printf( "attempt to allocate %d bytes failed\n", cb );
         show_error( "can't allocate memory" );
+    }
     return p;
 } /* my_malloc */
 
@@ -1518,20 +1521,28 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_reg( t1 ) )
                     show_error( "first argument must be a register" );
 
-                if ( !is_number( tokens[ 2 ] ) && !find_define( tokens[ 2 ] ) && ( T_INVALID != t2 ) ) 
-                    show_error( "second argument must be a constant, define, or label" );
-
-                val = 0;
-                if ( is_number( tokens[ 2 ] ) || find_define( tokens[ 2 ] ) )
+                if ( is_reg( t2 ) )
                 {
-                    val = number_or_define( tokens[ 2 ] );
-                    if ( val > 255 )
-                        show_error( "stincb value must be < 256" );
+                    code[ code_so_far++ ] = compose_op( 4, reg_from_token( t1 ), 1 );
+                    code[ code_so_far++ ] = compose_op( 4, reg_from_token( t2 ), 0 );
                 }
-
-                code[ code_so_far++ ] = compose_op( 1, reg_from_token( t1 ), 3 );
-                code[ code_so_far++ ] = 0;
-                initialize_word_value( & code_so_far, val );
+                else
+                {
+                    if ( !is_number( tokens[ 2 ] ) && !find_define( tokens[ 2 ] ) && ( T_INVALID != t2 ) ) 
+                        show_error( "second argument must be a constant, define, or label" );
+    
+                    val = 0;
+                    if ( is_number( tokens[ 2 ] ) || find_define( tokens[ 2 ] ) )
+                    {
+                        val = number_or_define( tokens[ 2 ] );
+                        if ( val > 255 )
+                            show_error( "stincb value must be < 256" );
+                    }
+    
+                    code[ code_so_far++ ] = compose_op( 1, reg_from_token( t1 ), 3 );
+                    code[ code_so_far++ ] = 0;
+                    initialize_word_value( & code_so_far, val );
+                }
                 break;
             }
             case T_STINC:
@@ -1544,17 +1555,25 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_reg( t1 ) )
                     show_error( "first argument must be a register" );
 
-                if ( !is_number( tokens[ 2 ] ) && !find_define( tokens[ 2 ] ) && ( T_INVALID != t2 ) ) 
-                    show_error( "second argument must be a constant, define, or label" );
-
-                val = 0;
-                if ( is_number( tokens[ 2 ] ) || find_define( tokens[ 2 ] ) )
-                    val = number_or_define( tokens[ 2 ] );
-                check_if_in_i16_range( val );
-
-                code[ code_so_far++ ] = compose_op( 1, reg_from_token( t1 ), 3 );
-                code[ code_so_far++ ] = compose_op( 0, 0, g_byte_len );
-                initialize_word_value( & code_so_far, val );
+                if ( is_reg( t2 ) )
+                {
+                    code[ code_so_far++ ] = compose_op( 4, reg_from_token( t1 ), 1 );
+                    code[ code_so_far++ ] = compose_op( 4, reg_from_token( t2 ), g_byte_len );
+                }
+                else
+                {
+                    if ( !is_number( tokens[ 2 ] ) && !find_define( tokens[ 2 ] ) && ( T_INVALID != t2 ) ) 
+                        show_error( "second argument must be a constant, define, or label" );
+    
+                    val = 0;
+                    if ( is_number( tokens[ 2 ] ) || find_define( tokens[ 2 ] ) )
+                        val = number_or_define( tokens[ 2 ] );
+                    check_if_in_i16_range( val );
+    
+                    code[ code_so_far++ ] = compose_op( 1, reg_from_token( t1 ), 3 );
+                    code[ code_so_far++ ] = compose_op( 0, 0, g_byte_len );
+                    initialize_word_value( & code_so_far, val );
+                }
                 break;
             }
             case T_STB:
@@ -1771,6 +1790,20 @@ int cdecl main( int argc, char * argv[] )
                     code[ code_so_far++ ] = compose_op( 1, reg_from_token( t1 ), 2 );
                     initialize_image_value( & code_so_far, ival );
                 }
+                break;
+            }
+            case T_SWAP:
+            {
+                if ( 3 != token_count )
+                    show_error( "swap takes two registers as arguments" );
+
+                t1 = find_token( tokens[ 1 ] );
+                t2 = find_token( tokens[ 2 ] );
+                if ( !is_reg( t1 ) || !is_reg( t2 ) )
+                    show_error( "swap takes two registers as arguments" );
+
+                code[ code_so_far++ ] = compose_op( 4, reg_from_token( t1 ), 1 );
+                code[ code_so_far++ ] = compose_op( 5, reg_from_token( t2 ), g_byte_len );
                 break;
             }
             case T_CMPST:
@@ -2318,18 +2351,25 @@ int cdecl main( int argc, char * argv[] )
                 t2 = find_token( tokens[ 2 ] );
                 val = 0;
 
-                if ( is_number( tokens[ 2 ] ) || find_define( tokens[ 2 ] ) )
-                    code_so_far += 2;
+                if ( is_reg( t2 ) )
+                {
+                    /* nothing to do here */
+                }
                 else
                 {
-                    plabel = find_label( tokens[ 2 ] );
-                    val = plabel->offset;
-
-                    if ( ( T_STINCB == t ) && ( val > 255 ) )
-                        show_error( "stincb requires numbers 0..255" );
-
-                    check_if_in_i16_range( (iwidth_t) val );
-                    initialize_word_value( & code_so_far, val );
+                    if ( is_number( tokens[ 2 ] ) || find_define( tokens[ 2 ] ) )
+                        code_so_far += 2;
+                    else
+                    {
+                        plabel = find_label( tokens[ 2 ] );
+                        val = plabel->offset;
+    
+                        if ( ( T_STINCB == t ) && ( val > 255 ) )
+                            show_error( "stincb requires numbers 0..255" );
+    
+                        check_if_in_i16_range( (iwidth_t) val );
+                        initialize_word_value( & code_so_far, val );
+                    }
                 }
                 break;
             }
@@ -2366,6 +2406,7 @@ int cdecl main( int argc, char * argv[] )
             case T_SIGNEXB:
             case T_SIGNEXW:
             case T_SIGNEXDW:
+            case T_SWAP:
             {
                 code_so_far += 2;
                 break;

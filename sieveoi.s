@@ -52,13 +52,14 @@ define syscall_print_integer  2
 
 .code
 start:
+    ldi     rframe, flags                   ; no function calls, so use rframe to hold the flags array
     ldi     rtmp, loops
     st      [iters], rtmp
 
   loop_again:
     st      [count], rzero
 
-    ldi     rarg1, flags
+    mov     rarg1, rframe
     ldib    rtmp, true
     ldi     rarg2, arraysizep
     zero    rres
@@ -72,7 +73,7 @@ start:
     ldob    rtmp, flags[ rarg1 ]
     j       rtmp, rzero, eq, flag_is_off
 
-    ldi     rarg2, 3
+    ldib    rarg2, 3
     add     rarg2, rarg1
     add     rarg2, rarg1
 
@@ -80,10 +81,9 @@ start:
     math    rtmp, rarg1, rarg2, add
     j       rtmp, rres, gt, inc_count       ; redundant check to that in the kloop but this makes the loop faster
 
-    push    rarg1                           ; save i
-    ldi     rarg1, flags
+    swap    rarg1, rframe
     staddb                                  ; [ rtmp + rarg1 ] = 0. rtmp += rarg2. repeat while rtmp <= rres.
-    pop     rarg1                           ; restore i
+    swap    rarg1, rframe
 
   inc_count:
     inc     [count]
