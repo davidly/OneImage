@@ -7,6 +7,7 @@
         -- ease of targeting for compilers
         -- support a single assembler source file across 16, 32, and 64 bit execution environments
         -- taking the best instructions from many different ISAs and bytecode interpreters
+        -- introducing new instructions that are simple yet helpful for typical apps
 
     Native Width: number of bytes for registers, pointers, etc. 16, 32, or 64. Build with defines OI2, OI4, or OI8
 
@@ -46,45 +47,43 @@
         2 lower bits 1..0 of byte 1 of 2 and 4 byte operations. 0 = byte, 1 = word, 2 = dword, 3 = qword
         when width doesn't apply to an instruction, this field can instead differentiate between instructions
 
-    4 byte operations: (stored in bits 7..5 of first byte of four-byte operations):
-      note: all addresses are pc-relative signed 16-bit values
-        0:  j / ji / jrel / jrelb   j if width = 0
-                                    ji if width = 1
-                                    jrelb if width = 2
-                                    jrel if width = 3
-                               j r0left, r1right, RELATION, ADDRESS
-                               ji r0left, r1rightIMMEDIATE, RELATION, ADDRESS.
-                                   r1rightIMMEDIATE is unsigned value + 1. == 1..8
-                               jrel r0left, r1rightADDRESS, offset (from r1right), RELATION (-128..127 pc offset)
-                                   for jrel, the address offset is unsigned. the pc offset is signed.
-                                   pc offset special cases:
-                                       0: ret
-                                       1: retnf
-        1:  stinc / stincb:    [ r0off ] = value; inc r0off per width
-        2:  ldinc / ldincb:    r0dst = address[ r1off ]. inc r1off per width.
-        3:  value of funct in op1:
-            0:   call:              functiontableaddress[ r0 ]
-            1:   callnf:            functiontableaddress[ r0 ]   (don't push or setup rframe).
-            2:   callnf:            address + r0   (don't push or setup rframe).
-        4:  sto / stob:        address[ r1offset ] = r0value. offset is multiplied by width
-        5:  value of funct in op1
-            0:   ldo / ldob:          r0dst = address[ r1off ]. offset is multiplied by width
-            1:   ldoinc / ldoincb:    r1++ (always one independent of width) then r0dst = address[ r1off ]. offset is multiplied by width
-            2:   ldi constant -32768..32767 sign extended. use ldb if possible and ldi's 3-byte form if the number is large or a 2-byte native width
-        6:  value of funct in op1
-            0:   ld / ldb:     r0dst = [ address ]
-            1:   sti / stib:   [address ], r1 -8..7
-            2:   math r0dst, r1src, r2src, math
-        7:  cstf               conditional stack frame store: cstf r0left r1right frame1REL reg2FRAMEOFFSET
-
     Opcode lengths:
         4 byte operations:
                     7..5        4..2            1..0
             byte 0: operation   Registers lhs   3
             byte 1: Relations   Registers rhs   Width
             bytes 2/3: 16 bit value
-            opcode is 4 bytes unless ADDRESS is used (funct0 2, 3, 4, 5, 6), in which case address is image width
-                           
+            note: all addresses are pc-relative signed 16-bit values
+            funct0:
+                0:  j / ji / jrel / jrelb   j if width = 0
+                                            ji if width = 1
+                                            jrelb if width = 2
+                                            jrel if width = 3
+                                       j r0left, r1right, RELATION, ADDRESS
+                                       ji r0left, r1rightIMMEDIATE, RELATION, ADDRESS.
+                                           r1rightIMMEDIATE is unsigned value + 1. == 1..8
+                                       jrel r0left, r1rightADDRESS, offset (from r1right), RELATION (-128..127 pc offset)
+                                           for jrel, the address offset is unsigned. the pc offset is signed.
+                                           pc offset special cases:
+                                               0: ret
+                                               1: retnf
+                1:  stinc / stincb:    [ r0off ] = value; inc r0off per width
+                2:  ldinc / ldincb:    r0dst = address[ r1off ]. inc r1off per width.
+                3:  value of funct in op1:
+                    0:   call:         functiontableaddress[ r0 ]
+                    1:   callnf:       functiontableaddress[ r0 ]   (don't push or setup rframe).
+                    2:   callnf:       address + r0   (don't push or setup rframe).
+                4:  sto / stob:        address[ r1offset ] = r0value. offset is multiplied by width
+                5:  value of funct in op1
+                    0:   ldo:          r0dst = address[ r1off ]. offset is multiplied by width
+                    1:   ldoinc:       r1++ (always one independent of width) then r0dst = address[ r1off ]. offset is multiplied by width
+                    2:   ldi           constant -32768..32767 sign extended. use ldb if possible and ldi's 3-byte form if the number is large or a 2-byte native width
+                6:  value of funct in op1
+                    0:   ld:           r0dst = [ address ]
+                    1:   sti:          [address ], r1 -8..7
+                    2:   math r0dst, r1src, r2src, math
+                7:  cstf               conditional stack frame store: cstf r0left r1right frame1REL reg2FRAMEOFFSET
+
         3 byte operations: high 3 bits 0..7:  ld, ldi, st, jmp, inc, dec, ldae, call
             ldae target is always rres. register is multiplied by image width and added to address for read. load array entry.
             following the first byte are image width bytes: 2, 4, 8
@@ -305,9 +304,9 @@ uint32_t RamInformationOI( uint32_t required, uint8_t ** ppRam )
 } /* RamInformationOI */
 
 #ifdef OLDCPU
-oi_t CheckRelation( l, r, relation ) ioi_t l; ioi_t r; uint8_t relation;
+bool CheckRelation( l, r, relation ) ioi_t l; ioi_t r; uint8_t relation;
 #else
-oi_t CheckRelation( ioi_t l, ioi_t r, uint8_t relation )
+bool CheckRelation( ioi_t l, ioi_t r, uint8_t relation )
 #endif
 {
     __assume( relation <= 5 );
@@ -556,7 +555,6 @@ static void ldo_do( opcode_t op )
 #endif
 {
     size_t op1;
-    oi_t val;
     uint8_t width, funct1;
     ioi_t ival;
 
@@ -566,24 +564,23 @@ static void ldo_do( opcode_t op )
 
     if ( 2 == funct1 )
         set_reg_from_op( op, (oi_t) ival );
-    else /* funct1 is 1 or 2 */
+    else /* funct1 is 0 or 1 */
     {
         if ( 1 == funct1 ) /* pre-increment register for inc variants */
             inc_reg_from_op( op1 );
     
         width = (uint8_t) width_from_op( op1 );
-        val = g_oi.rpc + ival + ( get_reg_from_op( op1 ) << width );
     
         if ( (oi_t) 0 == width )
-            set_reg_from_op( op, get_byte( val ) ); /* ldob */
+            set_reg_from_op( op, get_byte( g_oi.rpc + ival + get_reg_from_op( op1 ) ) ); /* ldob */
         else if_1_is_width
-            set_reg_from_op( op, get_word( val ) ); /* ldow */
+            set_reg_from_op( op, get_word( g_oi.rpc + ival + ( get_reg_from_op( op1 ) << 1 ) ) ); /* ldow */
 #ifndef OI2
         else if_2_is_width
-            set_reg_from_op( op, get_dword( val ) ); /* ldodw */
+            set_reg_from_op( op, get_dword( g_oi.rpc + ival + ( get_reg_from_op( op1 ) << 2 ) ) ); /* ldodw */
 #ifdef OI8
         else
-            set_reg_from_op( op, get_qword( val ) ); /* ldoqw */
+            set_reg_from_op( op, get_qword( g_oi.rpc + ival + ( get_reg_from_op( op1 ) << 3 ) ) ); /* ldoqw */
 #endif
 #endif
     }
@@ -772,22 +769,20 @@ void sto_do( opcode_t op )
 {
     opcode_t op1, width;
     oi_t val;
-    ioi_t ival;
 
     op1 = get_op1();
-    ival = (ioi_t) (int16_t) get_word( g_oi.rpc + 2 );
     width = width_from_op( op1 );
-    val = g_oi.rpc + ival + ( (oi_t) ( 1 << width ) * get_reg_from_op( op1 ) );
+    val = g_oi.rpc + (ioi_t) (int16_t) get_word( g_oi.rpc + 2 );
     if ( 0 == width )
-        set_byte( val, (uint8_t) get_reg_from_op( op ) );
+        set_byte( val + get_reg_from_op( op1 ), (uint8_t) get_reg_from_op( op ) );
     else if_1_is_width
-        set_word( val, (uint16_t) get_reg_from_op( op ) );
+        set_word( val + ( get_reg_from_op( op1 ) << 1 ), (uint16_t) get_reg_from_op( op ) );
 #ifndef OI2
     else if_2_is_width
-        set_dword( val, (uint32_t) get_reg_from_op( op ) );
+        set_dword( val + ( get_reg_from_op( op1 ) << 2 ), (uint32_t) get_reg_from_op( op ) );
 #ifdef OI8
     else /* 3 == width */
-        set_qword( val, get_reg_from_op( op ) );
+        set_qword( val + ( get_reg_from_op( op1 ) << 3 ), get_reg_from_op( op ) );
 #endif
 #endif
 } /* sto_do */
@@ -823,7 +818,7 @@ bool op_80_90_do( opcode_t op )
             set_oiword( val, get_reg_from_op( op ) );
             break;
         }
-        case 3: /* addimgw reg0 if width=0, subimgw if width=1, ldi if width=2 */
+        case 3: /* addimgw reg0 if width=0, subimgw if width=1 */
         {
             width = width_from_op( op1 );
             if ( 0 == width )
@@ -1074,7 +1069,7 @@ uint32_t ExecuteOI()
                             continue;
                         break;
                     }
-                    case 3: /* jrel r0left, r1rightADDRESS, offset (from r1right), RELATION, (-128..127 pc offset) */
+                    default: /* case 3: */ /* jrel r0left, r1rightADDRESS, offset (from r1right), RELATION, (-128..127 pc offset) */
                     {
                         if ( jrel_do( op, op1 ) )
                             continue;
@@ -1132,7 +1127,7 @@ uint32_t ExecuteOI()
                         g_oi.rpc = get_oiword( g_oi.rpc + ival + ( sizeof( oi_t ) * get_reg_from_op( op ) ) );
                         continue;
                     }
-                    case 2: /* callnf address */
+                    default: /* case 2: */ /* callnf address */
                     {
                         push( g_oi.rpc + 4 );
                         g_oi.rpc = g_oi.rpc + ival + ( sizeof( oi_t ) * get_reg_from_op( op ) );
@@ -1197,7 +1192,7 @@ uint32_t ExecuteOI()
 #endif
                         break;
                     }
-                    case 2: /* math r0dst, r1left, r2right, funct2MATH */
+                    default: /* case 2: */ /* math r0dst, r1left, r2right, funct2MATH */
                     {
                         op2 = get_op2();
                         set_reg_from_op( op, Math( get_reg_from_op( op1 ), get_reg_from_op( op2 ), funct_from_op( op2 ) ) );
@@ -1234,7 +1229,7 @@ uint32_t ExecuteOI()
                 /* set rdst to boolean of ( pop() RELATION rright ) */
                 op1 = get_op1();
                 pop( val );
-                set_reg_from_op( op, CheckRelation( val, get_reg_from_op( op1 ), funct_from_op( op1 ) ) );
+                set_reg_from_op( op, (oi_t) CheckRelation( val, get_reg_from_op( op1 ), funct_from_op( op1 ) ) );
                 break;
             }
             case 0x61: case 0x65: case 0x69: case 0x6d: /* ldf / stf / ret x / ldib / signex / memf / stadd / moddiv */
@@ -1257,8 +1252,7 @@ uint32_t ExecuteOI()
                     {
                         pop( g_oi.rpc );
                         pop( g_oi.rframe );
-                        val = ( 1 + reg_from_op( op1 ) );
-                        g_oi.rsp += ( sizeof( oi_t ) * val );
+                        g_oi.rsp += ( sizeof( oi_t ) * ( 1 + reg_from_op( op1 ) ) );
                         continue;
                     }
                     case 3: /* ldib rdst x */
@@ -1362,8 +1356,7 @@ uint32_t ExecuteOI()
             {
                 op1 = get_op1();
                 pop( val );
-                val = Math( val, get_reg_from_op( op1 ), funct_from_op( op1 ) );
-                set_reg_from_op( op, val );
+                set_reg_from_op( op, Math( val, get_reg_from_op( op1 ), funct_from_op( op1 ) ) );
                 break;
             }
             default:
