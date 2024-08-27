@@ -4,7 +4,7 @@ outputfile="test_oios.txt"
 echo $(date) >$outputfile
 
 declare -a _applist=( sieveoi eoi tttoi testoi )
-declare -a _basiclist=( e sieve ttt tp texp tcpm tfor tcomp )
+declare -a _basiclist=( e sieve ttt tp texp tcpm tfor tcomp tgosub tmul test tparen tneg tneg1 ta2dim )
 
 test_app()
 {
@@ -29,7 +29,9 @@ test_app()
 
 test_basic_app()
 {
-    ba -q -a:o -x $1
+    ba -q -a:o -x basic/$1
+    rm $1.s
+	 mv basic/$1.s .
     test_app $1
 }
 

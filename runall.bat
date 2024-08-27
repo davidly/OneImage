@@ -6,7 +6,7 @@ echo %date% %time% >%outputfile%
 
 set _applist=sieveoi eoi tttoi testoi
 
-set _basiclist=e sieve ttt tp texp tcpm tfor tcomp
+set _basiclist=e sieve ttt tp texp tcpm tfor tcomp tgosub tmul test tparen tneg tneg1 ta2dim
 
 ( for %%a in (%_applist%) do ( call :appRun %%a ) )
 
@@ -24,7 +24,9 @@ goto :eof
 
 :basicRun
 
-ba -q -a:o -x %~1
+ba -q -a:o -x basic\%~1
+del %~1.s 1>nul 2>nul
+move basic\%~1.s . 1>nul
 
 :appRun
 

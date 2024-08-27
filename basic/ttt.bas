@@ -24,7 +24,7 @@
 26 DIM SA%(10)
 27 DIM SB%(10)
 29 PRINT "start time: "; TIME$
-30 FOR L% = 1 TO 10
+30 FOR L% = 1 TO 1
 31 MC% = 0
 42 AL% = -100
 43 BE% = 100
