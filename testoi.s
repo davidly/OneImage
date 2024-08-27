@@ -154,7 +154,7 @@ start:
     dec     rarg2
     ld      rres, native_array[ rarg2 ]
     j       rres, rtmp, ne test_fail_18
-    jmp     _test_18_again
+    j       rzero, rzero, eq, _test_18_again
   _test_18_done:
 
     ld      rres, g_zero
