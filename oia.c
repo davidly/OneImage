@@ -937,8 +937,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( 3 != token_count )
                     show_error( "ldf requires 2 arguments, a register and integer >= -4 and <= 3. e.g. ldf rres, -2\n" );
                 t1 = find_token( tokens[ 1 ] );
-                if ( !is_reg( t1 ) || !is_number( tokens[ 2 ] ) )
-                    show_error( "ldf requires 2 arguments, a register and integer >= -4 and <= 3. e.g. ldf rres, -2\n" );
+                if ( !is_reg( t1 ) || T_RZERO == t1 || !is_number( tokens[ 2 ] ) )
+                    show_error( "ldf requires 2 arguments, a non-rzero register and integer >= -4 and <= 3. e.g. ldf rres, -2\n" );
 
                 offset = (int16_t) atoi( tokens[ 2 ] );
                 if ( offset < -4 || offset > 3 )
@@ -1021,7 +1021,7 @@ int cdecl main( int argc, char * argv[] )
             case T_STADDB:
             {
                 if ( 1 != token_count )
-                    show_error( "memfb takes no arguments" );
+                    show_error( "staddb takes no arguments" );
                 code[ code_so_far++ ] = compose_op( 3, 0, 1 );
                 code[ code_so_far++ ] = compose_op( 6, 0, 0 );
                 break;
@@ -1449,6 +1449,9 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_reg( t1 ) || !is_reg( t3 ) )
                     show_error( "first and third arguments must be registers" );
 
+                if ( T_RZERO == t1 )
+                    show_error( "ldo variants can't write to rzero" );
+
                 if ( !is_number( tokens[ 2 ] ) && !find_define( tokens[ 2 ] ) && ( T_INVALID != t2 ) ) 
                     show_error( "second argument must be an address" );
 
@@ -1594,6 +1597,9 @@ int cdecl main( int argc, char * argv[] )
                 if ( token_count < 3 )
                     show_error( "ld takes at least two arguments" );
                 t1 = find_token( tokens[ 1 ] );
+                if ( !is_reg( t1 ) || ( T_RZERO == t1 ) )
+                    show_error( "non-rzero register expected" );
+
                 t2 = find_token( tokens[ 2 ] );
 
                 if ( is_reg( t2 ) ) // ld rdst, [rsrc]
@@ -1618,10 +1624,13 @@ int cdecl main( int argc, char * argv[] )
                 t1 = find_token( tokens[ 1 ] );
                 t2 = find_token( tokens[ 2 ] );
 
+                if ( !is_reg( t1 ) || ( T_RZERO == t1 ) )
+                    show_error( "invalid arguments for ldb. first argument must be non-rzero register" );
+
                 if ( is_reg( t2 ) ) // ldb rdst, [rsrc]
                 {
-                    if ( !is_reg( t1 ) || ( 3 != token_count ) )
-                        show_error( "invalid arguments for ldb. expected ldb rdst, [rsrc]\n" );
+                    if ( 3 != token_count )
+                        show_error( "invalid arguments for ldb. ldst can't be rzero. expected ldb rdst, [rsrc]\n" );
 
                     code[ code_so_far++ ] = compose_op( 6, reg_from_token( t1 ), 1 );
                     code[ code_so_far++ ] = compose_op( 0, reg_from_token( t2 ), 0 );
@@ -1741,8 +1750,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( 3 != token_count )
                     show_error( "ldib takes two arguments" );
                 t1 = find_token( tokens[ 1 ] );
-                if ( !is_reg( t1 ) )
-                    show_error( "register expected" );
+                if ( !is_reg( t1 ) || ( T_RZERO == t1 ) )
+                    show_error( "non-rzero register expected" );
 
                 t2 = find_token( tokens[ 2 ] );
                 if ( ! ( ( T_INVALID == t2 ) || is_number( tokens[ 2 ] ) || T_DEFINE == t2 ) )
@@ -1767,8 +1776,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( 3 != token_count )
                     show_error( "ldi takes two arguments" );
                 t1 = find_token( tokens[ 1 ] );
-                if ( !is_reg( t1 ) )
-                    show_error( "register expected" );
+                if ( !is_reg( t1 ) || ( T_RZERO == t1 ) )
+                    show_error( "non-rzero register expected" );
 
                 t2 = find_token( tokens[ 2 ] );
                 if ( ! ( ( T_INVALID == t2 ) || is_number( tokens[ 2 ] ) || T_DEFINE == t2 ) )
@@ -1860,8 +1869,8 @@ int cdecl main( int argc, char * argv[] )
                     show_error( "mov takes 2 register arguments" );
                 t1 = find_token( tokens[ 1 ] );
                 t2 = find_token( tokens[ 2 ] );
-                if ( !is_reg( t1 ) || !is_reg( t2 ) )
-                    show_error( "mov takes 2 register arguments" );
+                if ( !is_reg( t1 ) || ( T_RZERO == t1 ) || !is_reg( t2 ) )
+                    show_error( "mov takes 2 register arguments; first must not be rzero" );
 
                 code[ code_so_far++ ] = compose_op( 1, reg_from_token( t1 ), 1 );
                 code[ code_so_far++ ] = compose_op( 3, reg_from_token( t2 ), 0 ); /* 3 is NE */

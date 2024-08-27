@@ -52,45 +52,42 @@ define syscall_print_integer  2
 
 .code
 start:
-    ldi     rframe, flags                   ; no function calls, so use rframe to hold the flags array
+    ldi     rarg1, flags                    ; use rarg1 to hold the flags array
     ldi     rtmp, loops
     st      [iters], rtmp
 
   loop_again:
     st      [count], rzero
 
-    mov     rarg1, rframe
     ldib    rtmp, true
     ldi     rarg2, arraysizep
     zero    rres
-    memfb                                   ; fill memory bytes at rarg1 with value of low(rtmp) for rarg2 bytes
+    memfb                                   ; fill memory bytes at rarg1 with value of low byte of rtmp for rarg2 bytes
 
-    ; i in rarg1. prime in rarg2.
+    ; i in rframe. prime in rarg2.
     ldi     rres, arraysize                 ; leave this here for the duration
-    zero    rarg1
+    zero    rframe
 
   next_prime:
-    ldob    rtmp, flags[ rarg1 ]
+    ldob    rtmp, flags[ rframe ]
     j       rtmp, rzero, eq, flag_is_off
 
     ldib    rarg2, 3
-    add     rarg2, rarg1
-    add     rarg2, rarg1
+    add     rarg2, rframe
+    add     rarg2, rframe
 
     ; k in rtmp
-    math    rtmp, rarg1, rarg2, add
+    math    rtmp, rframe, rarg2, add
     j       rtmp, rres, gt, inc_count       ; redundant check to that in the kloop but this makes the loop faster
 
-    swap    rarg1, rframe
-    staddb                                  ; [ rtmp + rarg1 ] = 0. rtmp += rarg2. repeat while rtmp <= rres.
-    swap    rarg1, rframe
+    staddb                                  ; [ rtmp + rframe ] = 0. rtmp += rarg2. repeat while rtmp <= rres.
 
   inc_count:
     inc     [count]
 
   flag_is_off:
-    inc     rarg1
-    j       rarg1, rres, le, next_prime
+    inc     rframe
+    j       rframe, rres, le, next_prime
 
     dec     [iters]
     ld      rtmp, iters

@@ -78,6 +78,8 @@
                     0:   ldo:          r0dst = address[ r1off ]. offset is multiplied by width
                     1:   ldoinc:       r1++ (always one independent of width) then r0dst = address[ r1off ]. offset is multiplied by width
                     2:   ldi           constant -32768..32767 sign extended. use ldb if possible and ldi's 3-byte form if the number is large or a 2-byte native width
+                    exceptions:      overridden
+                      43 UNUSED --     ldX rzero, ...
                 6:  value of funct in op1
                     0:   ld:           r0dst = [ address ]
                     1:   sti:          [address ], r1 -8..7
@@ -87,6 +89,10 @@
         3 byte operations: high 3 bits 0..7:  ld, ldi, st, jmp, inc, dec, ldae, call
             ldae target is always rres. register is multiplied by image width and added to address for read. load array entry.
             following the first byte are image width bytes: 2, 4, 8
+            jmp, inc, dec, call all add unsigned reg0 to target address
+            exceptions:      overridden
+               02 UNUSED  -- ld rzero, [address]
+               22 UNUSED  -- ldi rzero, XXXX
 
         2 byte operations:
                     7..5                 4..2            1..0
@@ -94,6 +100,8 @@
                 0: Math r0dst r1src
                 1: cmov r0dst, r1src, Relation. if ( r0dst Relation r1src ) r0dst = rssrc.
                    mov r0dst, r1src     -- this maps to cmov r0dst, r1src, ne
+                   exceptions:      overridden
+                     21 UNUSED     -- cmov rzero, ...
                 2: cmpst r0dst, r1src, Relation -- r0dst = ( pop() Relation r1src ). sets r0dst to a boolean 1 or 0
                 3: - 0/1 funct: ldf/stf. loads and stores r0 relative to rframe. r1 >= 0 is is frame[ ( 3 + r1 ) * 2 ]. r1 < 0 is frame[ ( 1 + r1 ) * 2 ]
                    - 2 funct: ret x     -- pop x items off the stack and return
@@ -117,26 +125,26 @@
 
         1 byte operations: high 3 bits 0..7 operate on reg0:   inc, dec, push, pop, zero, shl, shr, inv
             exceptions:          overridden
-                00 halt       -- inc rzero
-                08 retzero    -- inc rsp
-                20 imulst     -- dec rzero
-                28 shlimg     -- dec rsp. shift rres left based on image width 2=>1, 4=>2, 8=>3
-                40 push rzero -- DON'T OVERRIDE (idivst)
-                48 retzeronf  -- push rsp (nf = no rframe restoration)
-                60 pop rzero  -- DON'T OVERRIDE
-                68 retnf      -- pop rsp (nf = no rframe restoration)
-                80 subst      -- zero rzero
-                84 imgwid     -- zero rpc. sets rres to the image width
-                88 shrimg     -- zero rsp
-                a0 addst      -- shl rzero
-                a4 UNUSED     -- shl rpc
-                a8 idivst     -- shl rsp
-                c0 ret        -- shr rzero
-                c4 UNUSED     -- shr rpc
-                c8 UNUSED     -- shr rsp
-                e0 andst      -- inv rzero
-                e4 UNUSED     -- inv rpc
-                e8 UNUSED     -- inv rsp
+              00 halt       -- inc rzero
+              08 retzero    -- inc rsp
+              20 imulst     -- dec rzero
+              28 shlimg     -- dec rsp. shift rres left based on image width 2=>1, 4=>2, 8=>3
+              40 push rzero -- DON'T OVERRIDE (idivst)
+              48 retzeronf  -- push rsp (nf = no rframe restoration)
+              60 pop rzero  -- DON'T OVERRIDE
+              68 retnf      -- pop rsp (nf = no rframe restoration)
+              80 subst      -- zero rzero
+              84 imgwid     -- zero rpc. sets rres to the image width
+              88 shrimg     -- zero rsp
+              a0 addst      -- shl rzero
+              a4 UNUSED     -- shl rpc
+              a8 idivst     -- shl rsp
+              c0 ret        -- shr rzero
+              c4 UNUSED     -- shr rpc
+              c8 UNUSED     -- shr rsp
+              e0 andst      -- inv rzero
+              e4 UNUSED     -- inv rpc
+              e8 UNUSED     -- inv rsp
 
     Note: there are extra, unnecessary casts to appease older compilers. Also, no #elif or defined() exists on older compilers.
 
@@ -304,9 +312,9 @@ uint32_t RamInformationOI( uint32_t required, uint8_t ** ppRam )
 } /* RamInformationOI */
 
 #ifdef OLDCPU
-bool CheckRelation( l, r, relation ) ioi_t l; ioi_t r; uint8_t relation;
+static bool CheckRelation( l, r, relation ) ioi_t l; ioi_t r; uint8_t relation;
 #else
-bool CheckRelation( ioi_t l, ioi_t r, uint8_t relation )
+static bool CheckRelation( ioi_t l, ioi_t r, uint8_t relation )
 #endif
 {
     __assume( relation <= 5 );
@@ -330,9 +338,9 @@ bool CheckRelation( ioi_t l, ioi_t r, uint8_t relation )
 } /* CheckRelation */
 
 #ifdef OLDCPU
-oi_t Math( l, r, math ) oi_t l; oi_t r; uint8_t math;
+static oi_t Math( l, r, math ) oi_t l; oi_t r; uint8_t math;
 #else
-oi_t Math( oi_t l, oi_t r, uint8_t math )
+static oi_t Math( oi_t l, oi_t r, uint8_t math )
 #endif
 {
     __assume( math <= 7 );
@@ -345,7 +353,7 @@ oi_t Math( oi_t l, oi_t r, uint8_t math )
         case 4: { return l | r; }
         case 5: { return l ^ r; }
         case 6: { return l & r; }
-        case 7: { return l != r; }         /* true if !=, false if =. ( 0 != ( left - right ) ) */
+        case 7: { return l != r; }         /* true if !=, false if ==. ( 0 != ( left - right ) ) */
         default: { __assume( false ); }
     }
 
@@ -633,9 +641,9 @@ void cstf_do( opcode_t op )
 } /* cstf_do */
 
 #ifdef OLDCPU
-bool jrelb_do( op, op1 ) opcode_t op, op1;
+static bool jrelb_do( op, op1 ) opcode_t op, op1;
 #else
-bool jrelb_do( opcode_t op, opcode_t op1 )
+static bool jrelb_do( opcode_t op, opcode_t op1 )
 #endif
 {
     ioi_t ival;
@@ -656,9 +664,9 @@ bool jrelb_do( opcode_t op, opcode_t op1 )
 } /* jrelb_do */
 
 #ifdef OLDCPU
-bool jrel_do( op, op1 ) opcode_t op, op1;
+static bool jrel_do( op, op1 ) opcode_t op, op1;
 #else
-bool jrel_do( opcode_t op, opcode_t op1 )
+static bool jrel_do( opcode_t op, opcode_t op1 )
 #endif
 {
     ioi_t ival;
@@ -679,9 +687,9 @@ bool jrel_do( opcode_t op, opcode_t op1 )
 } /* jrel_do */
 
 #ifdef OLDCPU
-void stinc_do( op ) opcode_t op;
+static void stinc_do( op ) opcode_t op;
 #else
-void stinc_do( opcode_t op )
+static void stinc_do( opcode_t op )
 #endif
 {
     uint8_t width;
@@ -708,9 +716,9 @@ void stinc_do( opcode_t op )
 } /* stinc_do */
 
 #ifdef OLDCPU
-void stinc_reg_do( op ) opcode_t op;
+static void stinc_reg_do( op ) opcode_t op;
 #else
-void stinc_reg_do( opcode_t op )
+static void stinc_reg_do( opcode_t op )
 #endif
 {
     uint8_t width;
@@ -738,9 +746,9 @@ void stinc_reg_do( opcode_t op )
 } /* stinc_reg_do */
 
 #ifdef OLDCPU
-void st_do( op ) opcode_t op;
+static void st_do( op ) opcode_t op;
 #else
-void st_do( opcode_t op )
+static void st_do( opcode_t op )
 #endif
 {
     opcode_t op1, width;
@@ -762,9 +770,9 @@ void st_do( opcode_t op )
 } /* st_do */
 
 #ifdef OLDCPU
-void sto_do( op ) opcode_t op;
+static void sto_do( op ) opcode_t op;
 #else
-void sto_do( opcode_t op )
+static void sto_do( opcode_t op )
 #endif
 {
     opcode_t op1, width;
@@ -788,9 +796,9 @@ void sto_do( opcode_t op )
 } /* sto_do */
 
 #ifdef OLDCPU
-bool op_80_90_do( op ) opcode_t op;
+static bool op_80_90_do( op ) opcode_t op;
 #else
-bool op_80_90_do( opcode_t op )
+__forceinline static bool op_80_90_do( opcode_t op )
 #endif
 {
     opcode_t op1, width;
@@ -988,13 +996,13 @@ uint32_t ExecuteOI()
                 g_oi.rres = val & g_oi.rres;
                 break;
             }
-            case 0x02: case 0x06: case 0x0a: case 0x0e: /* ld r, [address] */
+            case 0x06: case 0x0a: case 0x0e: /* ld r, [address] */
             case 0x12: case 0x16: case 0x1a: case 0x1e:
             {
                 set_reg_from_op( op, get_oiword( get_oiword( g_oi.rpc + 1 ) ) );
                 break;
             }
-            case 0x22: case 0x26: case 0x2a: case 0x2e: /* ldi r, value */
+            case 0x26: case 0x2a: case 0x2e: /* ldi r, value */
             case 0x32: case 0x36: case 0x3a: case 0x3e:
             {
                 set_reg_from_op( op, get_oiword( g_oi.rpc + 1 ) );
@@ -1155,6 +1163,9 @@ uint32_t ExecuteOI()
                 {
                     case 0:  /* ld / ldb rdst, [address] */
                     {
+                        if ( 0 == reg_from_op( op ) ) /* can't write to rzero */
+                            break;
+
                         val = g_oi.rpc + (int16_t) get_word( g_oi.rpc + 2 );
                         width = width_from_op( op1 );
                         if ( 0 == width )
@@ -1194,6 +1205,9 @@ uint32_t ExecuteOI()
                     }
                     default: /* case 2: */ /* math r0dst, r1left, r2right, funct2MATH */
                     {
+                        if ( 0 == reg_from_op( op ) ) /* can't write to rzero */
+                            break;
+
                         op2 = get_op2();
                         set_reg_from_op( op, Math( get_reg_from_op( op1 ), get_reg_from_op( op2 ), funct_from_op( op2 ) ) );
                         break;
@@ -1214,7 +1228,7 @@ uint32_t ExecuteOI()
                 set_reg_from_op( op, Math( get_reg_from_op( op ), get_reg_from_op( op1 ), funct_from_op( op1 ) ) );
                 break;
             }
-            case 0x21: case 0x25: case 0x29: case 0x2d: /* mov r0dst, r1src / cmov r0dst, r1src, funct1REL */
+            case 0x25: case 0x29: case 0x2d: /* mov r0dst, r1src / cmov r0dst, r1src, funct1REL */
             case 0x31: case 0x35: case 0x39: case 0x3d:
             {
                 op1 = get_op1();

@@ -101,6 +101,7 @@
 
 #ifdef __GNUC__
     #define cdecl
+    #define __forceinline
 #else
     typedef size_t bool;
 #endif /* __GNUC__ */
@@ -144,6 +145,7 @@ extern struct OneImage g_oi;
 #ifdef _MSC_VER
 #if _MSC_VER <= 600
 #define __assume( x )
+#define __forceinline
 #endif /* _MSC_VER <= 600 */
 #else
 #define __assume( x )

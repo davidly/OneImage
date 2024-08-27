@@ -13,15 +13,16 @@ define array_size 20
     string  str_done "done\n"
     string  str_argc " argc\n"
     string  str_nl "\n"
+    image_t g_value
     byte    byte_array[ array_size ]
     word    word_array[ array_size ]
     image_t native_array[ array_size ]
+    image_t g_zero
     string  str_failure "failure in test "
 .dataend
 
 .code
 start:
-
     ldf     rarg1, 0
     syscall syscall_print_integer
     ldi     rarg1, str_argc
@@ -29,6 +30,8 @@ start:
 
     ldf     rtmp, 0
     ldf     rarg2, 1
+
+    st      [g_value], rarg2
 
   _next_arg:
     ld      rarg1, [rarg2]
@@ -112,7 +115,50 @@ start:
 
     ldi     rres, -39
     cmov    rres, rtmp, le
-    j       rres, rzero, ne, test_fail_12
+    j       rres, rzero, ne, test_fail_13
+
+; assembler syntax error    ldi     rzero, 666
+;    ldi     rres, 666
+;    j       rzero, rres, eq, test_fail_14
+
+;    ldi     rres, 666
+; assembler syntax error    mov     rzero, rres
+;    j       rzero, rres, eq, test_fail_15
+
+; assembler syntax error   ld      rzero, [g_value]
+;    ldi     rres, 1
+;    j       rzero, rres, eq, test_fail_16
+
+; assembler syntax error    ldo     rzero, native_array[ rzero ]
+
+    ldi     rarg1, byte_array
+    ldi     rarg2, array_size
+    ldi     rtmp, 23
+    zero    rres
+    memfb
+  _test_17_again:
+    j       rarg2, rzero, eq, _test_17_done
+    dec     rarg2
+    ldb     rres, byte_array[ rarg2 ]
+    j       rres, rtmp, ne test_fail_17
+    jmp     _test_17_again
+  _test_17_done:
+
+    ldi     rarg1, native_array
+    ldi     rarg2, array_size
+    ldi     rtmp, -30666
+    zero    rres
+    memf
+  _test_18_again:
+    j       rarg2, rzero, eq, _test_18_done
+    dec     rarg2
+    ld      rres, native_array[ rarg2 ]
+    j       rres, rtmp, ne test_fail_18
+    jmp     _test_18_again
+  _test_18_done:
+
+    ld      rres, g_zero
+    j       rres, rzero, ne test_fail_19
 
     ldi     rarg1, str_done
     syscall syscall_print_string
@@ -169,6 +215,30 @@ test_fail_12:
 
 test_fail_13:
     ldi    rarg1, 13
+    jmp    failure
+
+test_fail_14:
+    ldi    rarg1, 14
+    jmp    failure
+
+test_fail_15:
+    ldi    rarg1, 15
+    jmp    failure
+
+test_fail_16:
+    ldi    rarg1, 16
+    jmp    failure
+
+test_fail_17:
+    ldi    rarg1, 17
+    jmp    failure
+
+test_fail_18:
+    ldi    rarg1, 18
+    jmp    failure
+
+test_fail_19:
+    ldi    rarg1, 19
     jmp    failure
 
 failure:
