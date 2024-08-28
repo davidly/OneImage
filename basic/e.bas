@@ -16,7 +16,7 @@
 260 x% = ( a%( n% ) * 10 ) + qu%
 261 rem print "x, n, qu: "; x%; " "; n%; " "; qu%
 280 if 0 <> n% then goto 245
-300 print x%
+300 print x%;
 330 if 10 <= hi% then goto 230
 400 print " "
 410 print "done"

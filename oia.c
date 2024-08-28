@@ -51,7 +51,7 @@ enum TokenTypes
     T_LD, T_LDB, T_LDINC, T_LDO, T_LDOB, T_LDOINC, T_LDOINCB, T_LDF, T_LDAE, T_LDI, T_LDIB,
     T_ST, T_STI, T_STB, T_STIB, T_STINC, T_STINCB, T_STO, T_STOB, T_STF, T_STWAE,
     T_J, T_JI, T_JREL, T_JRELB, T_SHL, T_SHLIMG, T_SHR, T_SHRIMG, T_MEMF, T_MEMFB, T_STADDB,
-    T_ADD, T_SUB, T_MUL, T_DIV, T_OR, T_XOR, T_AND, T_CMP,
+    T_ADD, T_SUB, T_IMUL, T_IDIV, T_OR, T_XOR, T_AND, T_CMP,
     T_INC, T_DEC, T_JMP, T_ADDST, T_SUBST, T_IDIVST, T_IMULST,
     T_CMPST, T_PUSH, T_POP, T_PUSHF, T_STST, T_ZERO, T_SYSCALL, T_MODDIV,
     T_RZERO, T_RPC, T_RSP, T_RFRAME, T_RARG1, T_RARG2, T_RRES, T_RTMP,
@@ -68,7 +68,7 @@ static const char * TokenSet[] =
     "LD", "LDB", "LDINC", "LDO", "LDOB", "LDOINC", "LDOINCB", "LDF", "LDAE", "LDI", "LDIB",
     "ST", "STI", "STB", "STIB", "STINC", "STINCB", "STO", "STOB", "STF", "STWAE",
     "J", "JI", "JREL", "JRELB", "SHL", "SHLIMG", "SHR", "SHRIMG", "MEMF", "MEMFB", "STADDB",
-    "ADD", "SUB", "MUL", "DIV", "OR", "XOR", "AND", "CMP",
+    "ADD", "SUB", "IMUL", "IDIV", "OR", "XOR", "AND", "CMP",
     "INC", "DEC", "JMP", "ADDST", "SUBST", "IDIVST", "IMULST",
     "CMPST", "PUSH", "POP", "PUSHF", "STST", "ZERO", "SYSCALL", "MODDIV",
     "RZERO", "RPC", "RSP", "RFRAME", "RARG1", "RARG2", "RRES", "RTMP",
@@ -1348,12 +1348,11 @@ int cdecl main( int argc, char * argv[] )
             }
             case T_ADD:
             case T_SUB:
-            case T_MUL:
-            case T_DIV:
+            case T_IMUL:
+            case T_IDIV:
             case T_OR:
             case T_XOR:
             case T_AND:
-            case T_CMP:
             {
                 if ( 3 != token_count )
                     show_error( "<math instruction> takes two arguments" );
@@ -1506,11 +1505,12 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_number( tokens[ 1 ] ) && !find_define( tokens[ 1 ] ) && ( T_INVALID != t1 ) ) 
                     show_error( "first argument must be an address" );
 
-                val = number_or_define( tokens[ 2 ] );
-                check_if_in_i16_range( val );
+                val = 0;
+                if ( is_number( tokens[ 2 ] ) || find_define( tokens[ 2 ] ) )
+                    val = number_or_define( tokens[ 2 ] );
 
                 code[ code_so_far++ ] = compose_op( 4, reg_from_token( t3 ), 3 );
-                code[ code_so_far++ ] = compose_op( 0, reg_from_token( t2 ), 1 );
+                code[ code_so_far++ ] = compose_op( 0, reg_from_token( t2 ), g_byte_len );
                 initialize_word_value( & code_so_far, val );
                 break;
             }
@@ -1848,6 +1848,24 @@ int cdecl main( int argc, char * argv[] )
                 initialize_word_value( & code_so_far, compose_op( math_from_token( t4 ), reg_from_token( t3 ), 0 ) );
                 break;
             }
+            case T_CMP:
+            {
+                if ( 5 != token_count )
+                    show_error( "cmp takes 4 arguments: r0dst, r1left, r2right, RELATION" );
+
+                t1 = find_token( tokens[ 1 ] );
+                t2 = find_token( tokens[ 2 ] );
+                t3 = find_token( tokens[ 3 ] );
+                t4 = find_token( tokens[ 4 ] );
+
+                if ( !is_reg( t1 ) || !is_reg( t2 ) || !is_reg( t3 ) || !is_relation_token( t4 ) )
+                    show_error( "cmp takes 4 arguments: r0dst, r1left, r2right, RELATION" );
+
+                code[ code_so_far++ ] = compose_op( 6, reg_from_token( t1 ), 3 );
+                code[ code_so_far++ ] = compose_op( 3, reg_from_token( t2 ), 0 );
+                initialize_word_value( & code_so_far, compose_op( relation_from_token( t4 ), reg_from_token( t3 ), 0 ) );
+                break;
+            }
             case T_MATHST:
             {
                 if ( 4 != token_count )
@@ -1857,7 +1875,7 @@ int cdecl main( int argc, char * argv[] )
                 t3 = find_token( tokens[ 3 ] );
 
                 if ( !is_reg( t1 ) || !is_reg( t2 ) || !is_math_token( t3 ) )
-                    show_error( "cmpst takes 3 arguments: cmpst, r0dst, r1right, relation" );
+                    show_error( "mathst takes 3 arguments: cmpst, r0dst, r1right, relation" );
 
                 code[ code_so_far++ ] = compose_op( 7, reg_from_token( t1 ), 1 );
                 code[ code_so_far++ ] = compose_op( math_from_token( t3 ), reg_from_token( t2 ), 0 );
@@ -2384,6 +2402,7 @@ int cdecl main( int argc, char * argv[] )
             }
             case T_CSTF:
             case T_MATH:
+            case T_CMP:
             {
                 code_so_far += 4;
                 break;
@@ -2397,12 +2416,11 @@ int cdecl main( int argc, char * argv[] )
             case T_MODDIV:
             case T_ADD:
             case T_SUB:
-            case T_MUL:
-            case T_DIV:
+            case T_IMUL:
+            case T_IDIV:
             case T_OR:
             case T_XOR:
             case T_AND:
-            case T_CMP:
             case T_SYSCALL:
             case T_PUSHF:
             case T_STST:

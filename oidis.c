@@ -440,6 +440,8 @@ const char * DisassembleOI( uint8_t * pop, oi_t rpc, uint8_t image_width )
                     }
                     else if ( 2 == op1funct )
                         sprintf( buf, "math %s, %s, %s, %s", RegOpString( op ), RegOpString( op1 ), RegOpString( op2 ), MathString( funct_from_op( op2 ) ) );
+                    else if ( 3 == op1funct )
+                        sprintf( buf, "cmp %s, %s, %s, %s", RegOpString( op ), RegOpString( op1 ), RegOpString( op2 ), RelationString( funct_from_op( op2 ) ) );
                 }
                 else if ( 7 == opfunct ) /* cstf r0, r1, r1REL, r2reg */
                 {

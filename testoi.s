@@ -67,12 +67,12 @@ start:
     j       rres, rtmp, ne, test_fail_3
 
     mov     rres, rarg1
-    mul     rres, rarg2
+    imul    rres, rarg2
     ldi     rtmp, 85
     j       rres, rtmp, ne, test_fail_4
 
     mov     rres, rarg1
-    div     rres, rarg2
+    idiv    rres, rarg2
     ldi     rtmp, 3
     j       rres, rtmp, ne, test_fail_5
 
@@ -92,7 +92,7 @@ start:
     j       rres, rtmp, ne, test_fail_8
 
     mov     rres, rarg1
-    cmp     rres, rarg2                  ; true if !=, false if =. ( 0 != ( left - right ) )
+    math    rres, rres, rarg2, cmp    ; true if !=, false if =. ( 0 != ( left - right ) )
     ldi     rtmp, 1
     j       rres, rtmp, ne, test_fail_9
 
@@ -101,7 +101,7 @@ start:
     j       rtmp, rarg1, ne, test_fail_10
     ldi     rarg2, -300000
     ldi     rres, 100000
-    div     rarg2, rres
+    idiv    rarg2, rres
     imgwid
     ldib    rarg1, 2
     j       rres, rarg1, eq, _width_2_ignore
@@ -158,7 +158,14 @@ start:
   _test_18_done:
 
     ld      rres, g_zero
-    j       rres, rzero, ne test_fail_19
+    j       rres, rzero, ne, test_fail_19
+
+    ldi     rarg1, 105
+    ldi		rarg2, 92
+    cmp     rres, rarg1, rarg2, ge
+    j       rres, rzero, eq, test_fail_20
+    cmp     rres, rarg1, rarg2, lt
+    j       rres, rzero, ne, test_fail_21
 
     ldi     rarg1, str_done
     syscall syscall_print_string
@@ -239,6 +246,14 @@ test_fail_18:
 
 test_fail_19:
     ldi    rarg1, 19
+    jmp    failure
+
+test_fail_20:
+    ldi    rarg1, 20
+    jmp    failure
+
+test_fail_21:
+    ldi    rarg1, 21
     jmp    failure
 
 failure:

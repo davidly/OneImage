@@ -117,7 +117,7 @@ atou: ; string in arg1. result in rres
         j       rtmp, rres, gt, _atouDone
 
         ldi     rres, 10
-        mul     rarg2, rres
+        imul    rarg2, rres
 
         ldi     rres, 48
         math    rtmp, rtmp, rres, sub

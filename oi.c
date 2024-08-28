@@ -84,6 +84,7 @@
                     0:   ld:           r0dst = [ address ]
                     1:   sti:          [address ], r1 -8..7
                     2:   math r0dst, r1src, r2src, math
+                    3:   cmp r0dst, r1src, r2src, Relation
                 7:  cstf               conditional stack frame store: cstf r0left r1right frame1REL reg2FRAMEOFFSET
 
         3 byte operations: high 3 bits 0..7:  ld, ldi, st, jmp, inc, dec, ldae, call
@@ -1203,13 +1204,22 @@ uint32_t ExecuteOI()
 #endif
                         break;
                     }
-                    default: /* case 2: */ /* math r0dst, r1left, r2right, funct2MATH */
+                    case 2: /* math r0dst, r1left, r2right, funct2MATH */
                     {
                         if ( 0 == reg_from_op( op ) ) /* can't write to rzero */
                             break;
 
                         op2 = get_op2();
                         set_reg_from_op( op, Math( get_reg_from_op( op1 ), get_reg_from_op( op2 ), funct_from_op( op2 ) ) );
+                        break;
+                    }
+                    default: /* case 3: */ /* cmp r0dst, r1left, r2right, funct2RELATION */
+                    {
+                        if ( 0 == reg_from_op( op ) ) /* can't write to rzero */
+                            break;
+
+                        op2 = get_op2();
+                        set_reg_from_op( op, (oi_t) CheckRelation( get_reg_from_op( op1 ), get_reg_from_op( op2 ), funct_from_op( op2 ) ) );
                         break;
                     }
                 }

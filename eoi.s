@@ -88,7 +88,7 @@ start:
     dec     rarg2                        ; n--
     ldob    rres, array[ rarg2 ]
     ldi     rarg1, 10
-    mul     rres, rarg1                  ; 10 * a[ n - 1 ]
+    imul    rres, rarg1                  ; 10 * a[ n - 1 ]
     mathst  rres, rres, add              ; add results of multiplication and division
     j       rarg2, rzero, ne, _innerloop
 
