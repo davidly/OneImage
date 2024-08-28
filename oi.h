@@ -151,6 +151,10 @@ extern struct OneImage g_oi;
 #define __assume( x )
 #endif /* _MSC_VER */
 
+#ifdef WATCOM
+#define __forceinline
+#endif /* WATCOM */
+
 /* opcode decoding utilities */
 
 #define funct_from_op( op ) ( (uint8_t) ( op >> 5 ) )

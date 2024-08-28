@@ -201,9 +201,13 @@ static uint8_t ram[ 32767 ];
 #else
 #ifdef MSC6 /* DOS version is built with small memory model */
 static uint8_t ram[ 60000 ];
-#endif
+#endif /* MSC6 */
+#ifdef WATCOM
+static uint8_t ram[ 60000 ];
+#else /* WATCOM */
 static uint8_t ram[ 8 * 1024 * 1024 ]; /* arbitrary */
-#endif
+#endif /* WATCOM */
+#endif /* OLDCPU */
 
 #ifndef NDEBUG
 static uint8_t g_OIState = 0;
@@ -331,11 +335,10 @@ static bool CheckRelation( ioi_t l, ioi_t r, uint8_t relation )
     }
 
     assert( false );
-/*
-#ifndef HISOFTCPM
+
+#ifdef WATCOM
     return false;
-#endif
-*/
+#endif /* WATCOM */
 } /* CheckRelation */
 
 #ifdef OLDCPU
