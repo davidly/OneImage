@@ -69,6 +69,8 @@
                                                1: retnf
                 1:  stinc / stincb:    [ r0off ] = value; inc r0off per width
                 2:  ldinc / ldincb:    r0dst = address[ r1off ]. inc r1off per width.
+                    exceptions:      overridden
+                        43 UNUSED --     ldinc rzero, ...
                 3:  value of funct in op1:
                     0:   call:         functiontableaddress[ r0 ]
                     1:   callnf:       functiontableaddress[ r0 ]   (don't push or setup rframe).
@@ -79,7 +81,7 @@
                     1:   ldoinc:       r1++ (always one independent of width) then r0dst = address[ r1off ]. offset is multiplied by width
                     2:   ldi           constant -32768..32767 sign extended. use ldb if possible and ldi's 3-byte form if the number is large or a 2-byte native width
                     exceptions:      overridden
-                      43 UNUSED --     ldX rzero, ...
+                        a3 UNUSED --     ldo/ldi rzero, ...
                 6:  value of funct in op1
                     0:   ld:           r0dst = [ address ]
                     1:   sti:          [address ], r1 -8..7
@@ -119,8 +121,12 @@
                               width 1: subimgw reg0
                    - 4 funct: stinc [reg0], reg1 then increment reg0 by width of store
                    - 5 funct: swap reg0, reg1
-                5: st [r0dst] r1src     later: lots of free functs. make conditionals?
-                6: ld r0dst [r1src]     later: lots of free functs. make contitionals?
+                5:
+                   - 0 funct: st [r0dst], r1src 
+                   - 1 funct: ld r0dst, [r1src]
+                6: mov r0dst, r1src.   unconditional. in addition to cmov for faster perf
+                   exceptions:      overridden
+                     c1 UNUSED     -- mov rzero, ...
                 7: mathst r0dst, r1src, Math   -- r0dst = ( pop() MATH r1src )
             byte 1: Math/Relation/Funct  r1 rhs          bit width ( 0=8, 1=16...)
 
@@ -750,28 +756,46 @@ static void stinc_reg_do( opcode_t op )
 } /* stinc_reg_do */
 
 #ifdef OLDCPU
-static void st_do( op ) opcode_t op;
+static void ld_st_reg_reg_do( op ) opcode_t op;
 #else
-static void st_do( opcode_t op )
+static void ld_st_reg_reg_do( opcode_t op )
 #endif
 {
     opcode_t op1, width;
-
     op1 = get_op1();
     width = width_from_op( op1 );
-    if ( 0 == width )
-        set_byte( get_reg_from_op( op ), (uint8_t) ( 0xff & get_reg_from_op( op1 ) ) );
-    else if_1_is_width
-        set_word( get_reg_from_op( op ), (uint16_t) get_reg_from_op( op1 ) );
+
+    if ( 0 == funct_from_op( op1 ) ) /* st */
+    {
+        if ( 0 == width )
+            set_byte( get_reg_from_op( op ), (uint8_t) ( 0xff & get_reg_from_op( op1 ) ) );
+        else if_1_is_width
+            set_word( get_reg_from_op( op ), (uint16_t) get_reg_from_op( op1 ) );
 #ifndef OI2
-    else if_2_is_width
-        set_dword( get_reg_from_op( op ), (uint32_t) get_reg_from_op( op1 ) );
+        else if_2_is_width
+            set_dword( get_reg_from_op( op ), (uint32_t) get_reg_from_op( op1 ) );
 #ifdef OI8
-    else /* 3 == width */
-        set_qword( get_reg_from_op( op ), get_reg_from_op( op1 ) );
+        else /* 3 == width */
+            set_qword( get_reg_from_op( op ), get_reg_from_op( op1 ) );
 #endif
 #endif
-} /* st_do */
+    }
+    else /* 1 == funct1:  ld */
+    {
+        if ( 0 == width )
+            set_reg_from_op( op, get_byte( get_reg_from_op( op1 ) ) );
+        else if_1_is_width
+            set_reg_from_op( op, get_word( get_reg_from_op( op1 ) ) );
+#ifndef OI2
+        else if_2_is_width
+            set_reg_from_op( op, get_dword( get_reg_from_op( op1 ) ) );
+#ifdef OI8
+        else /* 3 == width */
+            set_reg_from_op( op, get_qword( get_reg_from_op( op1 ) ) );
+#endif
+#endif
+    }
+} /* ld_st_reg_reg_do */
 
 #ifdef OLDCPU
 static void sto_do( op ) opcode_t op;
@@ -1096,7 +1120,7 @@ uint32_t ExecuteOI()
                 stinc_do( op );
                 break;
             }
-            case 0x43: case 0x47: case 0x4b: case 0x4f: /* ldinc reg0dst reg1offinc pc-relative-offset */
+            case 0x47: case 0x4b: case 0x4f: /* ldinc reg0dst reg1offinc pc-relative-offset */
             case 0x53: case 0x57: case 0x5b: case 0x5f:
             {
                 op1 = get_op1();
@@ -1153,7 +1177,7 @@ uint32_t ExecuteOI()
                 sto_do( op );
                 break;
             }
-            case 0xa3: case 0xa7: case 0xab: case 0xaf: /* ldo / ldob / ldoinc / ldoincb / ldi */
+            case 0xa7: case 0xab: case 0xaf: /* ldo / ldob / ldoinc / ldoincb / ldi */
             case 0xb3: case 0xb7: case 0xbb: case 0xbf:
             {
                 ldo_do( op );
@@ -1241,7 +1265,7 @@ uint32_t ExecuteOI()
                 set_reg_from_op( op, Math( get_reg_from_op( op ), get_reg_from_op( op1 ), funct_from_op( op1 ) ) );
                 break;
             }
-            case 0x25: case 0x29: case 0x2d: /* mov r0dst, r1src / cmov r0dst, r1src, funct1REL */
+            case 0x25: case 0x29: case 0x2d: /* cmov r0dst, r1src, funct1REL */
             case 0x31: case 0x35: case 0x39: case 0x3d:
             {
                 op1 = get_op1();
@@ -1353,29 +1377,16 @@ uint32_t ExecuteOI()
                     continue;
                 break;
             }
-            case 0xa1: case 0xa5: case 0xa9: case 0xad: /* st / stb [r0dst] r1src */
+            case 0xa1: case 0xa5: case 0xa9: case 0xad: /* st [r0dst] r1src / ld r0dst [r1src] */
             case 0xb1: case 0xb5: case 0xb9: case 0xbd:
             {
-                st_do( op );
+                ld_st_reg_reg_do( op );
                 break;
             }
-            case 0xc1: case 0xc5: case 0xc9: case 0xcd: /* ld r0dst [r1src] */
+            case 0xc5: case 0xc9: case 0xcd: /* mov r0dst r1src */
             case 0xd1: case 0xd5: case 0xd9: case 0xdd:
             {
-                op1 = get_op1();
-                width = width_from_op( op1 );
-                if ( 0 == width )
-                    set_reg_from_op( op, get_byte( get_reg_from_op( op1 ) ) );
-                else if_1_is_width
-                    set_reg_from_op( op, get_word( get_reg_from_op( op1 ) ) );
-#ifndef OI2
-                else if_2_is_width
-                    set_reg_from_op( op, get_dword( get_reg_from_op( op1 ) ) );
-#ifdef OI8
-                else /* 3 == width */
-                    set_reg_from_op( op, get_qword( get_reg_from_op( op1 ) ) );
-#endif
-#endif
+                set_reg_from_op( op, get_reg_from_op( get_op1() ) );
                 break;
             }
             case 0xe1: case 0xe5: case 0xe9: case 0xed: /* mathst r0dst, r1src, Math */

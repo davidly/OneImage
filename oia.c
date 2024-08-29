@@ -1460,7 +1460,7 @@ int cdecl main( int argc, char * argv[] )
                 check_if_in_i16_range( val );
 
                 tmp = (uint8_t) ( ( T_LDOINC == t || T_LDOINCB == t ) ? 1 : 0 );
-                width = (uint8_t) ( ( T_LDOB == t || T_LDOINCB == t ) ? 0 : 1 );
+                width = (uint8_t) ( ( T_LDOB == t || T_LDOINCB == t ) ? 0 : g_byte_len );
 
                 code[ code_so_far++ ] = compose_op( 5, reg_from_token( t1 ), 3 );
                 code[ code_so_far++ ] = compose_op( tmp, reg_from_token( t3 ), width );
@@ -1604,8 +1604,8 @@ int cdecl main( int argc, char * argv[] )
 
                 if ( is_reg( t2 ) ) // ld rdst, [rsrc]
                 {
-                    code[ code_so_far++ ] = compose_op( 6, reg_from_token( t1 ), 1 );
-                    code[ code_so_far++ ] = compose_op( 0, reg_from_token( t2 ), g_byte_len );
+                    code[ code_so_far++ ] = compose_op( 5, reg_from_token( t1 ), 1 );
+                    code[ code_so_far++ ] = compose_op( 1, reg_from_token( t2 ), g_byte_len );
                 }
                 else // ld rdst, [ address (+ number) ]
                 {
@@ -1632,8 +1632,8 @@ int cdecl main( int argc, char * argv[] )
                     if ( 3 != token_count )
                         show_error( "invalid arguments for ldb. ldst can't be rzero. expected ldb rdst, [rsrc]\n" );
 
-                    code[ code_so_far++ ] = compose_op( 6, reg_from_token( t1 ), 1 );
-                    code[ code_so_far++ ] = compose_op( 0, reg_from_token( t2 ), 0 );
+                    code[ code_so_far++ ] = compose_op( 5, reg_from_token( t1 ), 1 );
+                    code[ code_so_far++ ] = compose_op( 1, reg_from_token( t2 ), 0 );
                 }
                 else // ldb rdst, [ address (+ number) ]
                 {
@@ -1890,8 +1890,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_reg( t1 ) || ( T_RZERO == t1 ) || !is_reg( t2 ) )
                     show_error( "mov takes 2 register arguments; first must not be rzero" );
 
-                code[ code_so_far++ ] = compose_op( 1, reg_from_token( t1 ), 1 );
-                code[ code_so_far++ ] = compose_op( 3, reg_from_token( t2 ), 0 ); /* 3 is NE */
+                code[ code_so_far++ ] = compose_op( 6, reg_from_token( t1 ), 1 );
+                code[ code_so_far++ ] = compose_op( 0, reg_from_token( t2 ), 0 );
                 break;
             }
             case T_CMOV:
@@ -1900,8 +1900,8 @@ int cdecl main( int argc, char * argv[] )
                     show_error( "cmov takes 2 register the one relation arguments" );
                 t1 = find_token( tokens[ 1 ] );
                 t2 = find_token( tokens[ 2 ] );
-                if ( !is_reg( t1 ) || !is_reg( t2 ) )
-                    show_error( "cmov takes 2 register arguments" );
+                if ( !is_reg( t1 ) || ( T_RZERO == t1 ) || !is_reg( t2 ) )
+                    show_error( "cmov takes 2 register arguments; first must not be rzero" );
 
                 t3 = find_token( tokens[ 3 ] );
                 if ( !is_relation_token( t3 ) )

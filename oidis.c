@@ -244,10 +244,7 @@ const char * DisassembleOI( uint8_t * pop, oi_t rpc, uint8_t image_width )
                 else if ( 0x20 == opOperation )
                 {
                     op1funct = funct_from_op( op1 );
-                    if ( 3 == op1funct ) /* ne -- not conditional, just a mov */
-                        sprintf( buf, "mov %s, %s", RegOpString( op ), RegOpString( op1 ) );
-                    else
-                        sprintf( buf, "cmov %s, %s, %s", RegOpString( op ), RegOpString( op1 ), RelationString( op1funct ) );
+                    sprintf( buf, "cmov %s, %s, %s", RegOpString( op ), RegOpString( op1 ), RelationString( op1funct ) );
                 }
                 else if ( 0x40 == opOperation ) 
                     sprintf( buf, "cmpst %s, %s, %s", RegOpString( op ), RegOpString( op1 ), RelationString( funct_from_op( op1 ) ) );
@@ -305,13 +302,14 @@ const char * DisassembleOI( uint8_t * pop, oi_t rpc, uint8_t image_width )
                 else if ( 0xa0 == opOperation ) /* st [r0dst] r1src */
                 {
                     width = (uint8_t) width_from_op( op1 );
-                    sprintf( buf, "st%s [%s], %s", WidthSuffix( width ), RegOpString( op ), RegOpString( op1 ) );
+                    op1funct = (uint8_t) funct_from_op( op1 );
+                    if ( 0 == op1funct )
+                        sprintf( buf, "st%s [%s], %s", WidthSuffix( width ), RegOpString( op ), RegOpString( op1 ) );
+                    else if ( 1 == op1funct )
+                        sprintf( buf, "ld%s %s, [%s]", WidthSuffix( width ), RegOpString( op ), RegOpString( op1 ) );
                 }
-                else if ( 0xc0 == opOperation ) /* ld r0dst [r1src] */
-                {
-                    width = (uint8_t) width_from_op( op1 );
-                    sprintf( buf, "ld%s %s, [%s]", WidthSuffix( width ), RegOpString( op ), RegOpString( op1 ) );
-                }
+                else if ( 0xc0 == opOperation ) /* mov r0dst r1src */
+                    sprintf( buf, "mov %s, %s", RegOpString( op ), RegOpString( op1 ) );
                 else if ( 0xe0 == opOperation ) /* mathst r0dst, r1src, Math */
                     sprintf( buf, "mathst %s, %s, %s", RegOpString( op ), RegOpString( op1 ), MathString( funct_from_op( op1 ) ) );
             }

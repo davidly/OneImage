@@ -37,16 +37,19 @@ echo   test %~1 as 2-bytes
 echo test %~1 as 2-bytes >>%outputfile%
 oia -w:2 %~1.s >>%outputfile%
 oios2 %~1 >>%outputfile%
+rem rvos ..\rvos\debianrv\oios2 %~1 >>%outputfile%
 
 echo   test %~1 as 4-bytes
 echo test %~1 as 4-bytes >>%outputfile%
 oia -w:4 %~1.s >>%outputfile%
 oios4 %~1 >>%outputfile%
+rem rvos ..\rvos\debianrv\oios4 %~1 >>%outputfile%
 
 echo   test %~1 as 8-bytes
 echo test %~1 as 8-bytes >>%outputfile%
 oia -w:8 %~1.s >>%outputfile%
 oios8 %~1 >>%outputfile%
+rem rvos ..\rvos\debianrv\oios8 %~1 >>%outputfile%
 
 exit /b 0
 

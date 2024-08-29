@@ -120,7 +120,7 @@ atou: ; string in arg1. result in rres
         imul    rarg2, rres
 
         ldi     rres, 48
-        math    rtmp, rtmp, rres, sub
+        sub     rtmp, rres
         add     rarg2, rtmp
         inc     rarg1
         j       rzero, rzero, eq, _atouNext
@@ -257,7 +257,7 @@ minmax_min:
     ldf     rres, 0                         ; load beta
     j       rarg1, rres, ge, _min_loop
     stf     rarg1, 0                        ; update beta with value
-    j       rzero, rzero, eq, _min_loop
+    j       rzero, rzero, eq, _min_loop     ; shorter than jmp for 4 and 8 byte widths
 
   _min_return_value:
     mov     rres, rarg1
