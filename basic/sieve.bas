@@ -6,8 +6,7 @@
 70 FL%(I%) = 1
 80 NEXT I%
 90 FOR I% = 0 TO 8190
-100 IF 0 <> FL%(I%) goto 105
-101 GOTO 180
+100 IF 0 = FL%(I%) goto 180
 105 PR% = I% + I% + 3
 120 K% = I% + PR%
 130 IF K% > SI% goto 170

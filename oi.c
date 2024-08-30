@@ -39,7 +39,9 @@
         3 bit IDs 0..7 for add, sub, imul, idiv, or, xor, and, cmp
 
     Relation (stored in bits 7..5) 
-        3 bit IDs 0..7 for gt, lt, eq, ne, ge, le
+        3 bit IDs 0..7 for:    gt, lt, eq, ne, ge, le, even, odd
+        even is true if the lhs is even. the rhs is ignored
+        odd is true if the lhs is odd. the rhs is ignored
 
     Operation: Another name for Function when it's not Math or Relation
 
@@ -64,12 +66,13 @@
                                            r1rightIMMEDIATE is unsigned value + 1. == 1..8
                                        jrel r0left, r1rightADDRESS, offset (from r1right), RELATION (-128..127 pc offset)
                                            for jrel, the address offset is unsigned. the pc offset is signed.
+                                           jrelb checks byte values. jrel checks native width values
                                            pc offset special cases:
                                                0: ret
                                                1: retnf
                 1:  stinc / stincb:    [ r0off ] = value; inc r0off per width
                 2:  ldinc / ldincb:    r0dst = address[ r1off ]. inc r1off per width.
-                    exceptions:      overridden
+                    exceptions:          overridden
                         43 UNUSED --     ldinc rzero, ...
                 3:  value of funct in op1:
                     0:   call:         functiontableaddress[ r0 ]
@@ -80,13 +83,13 @@
                     0:   ldo:          r0dst = address[ r1off ]. offset is multiplied by width
                     1:   ldoinc:       r1++ (always one independent of width) then r0dst = address[ r1off ]. offset is multiplied by width
                     2:   ldi           constant -32768..32767 sign extended. use ldb if possible and ldi's 3-byte form if the number is large or a 2-byte native width
-                    exceptions:      overridden
+                    exceptions:          overridden
                         a3 UNUSED --     ldo/ldi rzero, ...
                 6:  value of funct in op1
                     0:   ld:           r0dst = [ address ]
                     1:   sti:          [address ], r1 -8..7
-                    2:   math r0dst, r1src, r2src, math
-                    3:   cmp r0dst, r1src, r2src, Relation
+                    2:   math r0dst, r1src, r2src, f2Math
+                    3:   cmp r0dst, r1src, r2src, f2Relation
                 7:  cstf               conditional stack frame store: cstf r0left r1right frame1REL reg2FRAMEOFFSET
 
         3 byte operations: high 3 bits 0..7:  ld, ldi, st, jmp, inc, dec, ldae, call
@@ -328,7 +331,7 @@ static bool CheckRelation( l, r, relation ) ioi_t l; ioi_t r; uint8_t relation;
 static bool CheckRelation( ioi_t l, ioi_t r, uint8_t relation )
 #endif
 {
-    __assume( relation <= 5 );
+    __assume( relation <= 7 );
     switch ( relation )
     {
         case 0: { return ( l > r ); }
@@ -337,6 +340,8 @@ static bool CheckRelation( ioi_t l, ioi_t r, uint8_t relation )
         case 3: { return ( l != r ); }
         case 4: { return ( l >= r ); }
         case 5: { return ( l <= r ); }
+        case 6: { return ( 0 == ( l & 1 ) ); } /* true if left is even. right is ignored */
+        case 7: { return ( 0 != ( l & 1 ) ); } /* true if left is odd. right is ignored */
         default: { __assume( false ); }
     }
 
@@ -680,7 +685,7 @@ static bool jrel_do( opcode_t op, opcode_t op1 )
 #endif
 {
     ioi_t ival;
-    if ( CheckRelation( get_reg_from_op( op ), get_word( get_reg_from_op( op1 ) + get_byte( g_oi.rpc + 2 ) ), funct_from_op( op1 ) ) )
+    if ( CheckRelation( get_reg_from_op( op ), get_oiword( get_reg_from_op( op1 ) + get_byte( g_oi.rpc + 2 ) ), funct_from_op( op1 ) ) )
     {
         ival = (ioi_t) (int8_t) get_byte( g_oi.rpc + 3 );
         if ( ival <= (ioi_t) 1 ) /* jump relative <= 1 means return. 1=nf */

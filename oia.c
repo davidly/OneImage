@@ -55,7 +55,8 @@ enum TokenTypes
     T_INC, T_DEC, T_JMP, T_ADDST, T_SUBST, T_IDIVST, T_IMULST,
     T_CMPST, T_PUSH, T_POP, T_PUSHF, T_STST, T_ZERO, T_SYSCALL, T_MODDIV,
     T_RZERO, T_RPC, T_RSP, T_RFRAME, T_RARG1, T_RARG2, T_RRES, T_RTMP,
-    T_GT, T_LT, T_EQ, T_NE, T_GE, T_LE, T_MOV, T_CMOV, T_RET, T_RETZERO, T_RETNF, T_RETZERONF, T_INV,
+    T_GT, T_LT, T_EQ, T_NE, T_GE, T_LE, T_EVEN, T_ODD,
+    T_MOV, T_CMOV, T_RET, T_RETZERO, T_RETNF, T_RETZERONF, T_INV,
     T_CSTF, T_MATHST, T_MATH, T_PLUS, T_IMGWID, T_ADDIMGW, T_SUBIMGW,
     T_SIGNEXB, T_SIGNEXW, T_SIGNEXDW, T_SWAP,
     T_CALLNF, T_CALL
@@ -72,14 +73,15 @@ static const char * TokenSet[] =
     "INC", "DEC", "JMP", "ADDST", "SUBST", "IDIVST", "IMULST",
     "CMPST", "PUSH", "POP", "PUSHF", "STST", "ZERO", "SYSCALL", "MODDIV",
     "RZERO", "RPC", "RSP", "RFRAME", "RARG1", "RARG2", "RRES", "RTMP",
-    "GT", "LT", "EQ", "NE", "GE", "LE", "MOV", "CMOV", "RET", "RETZERO", "RETNF", "RETZERONF", "INV",
+    "GT", "LT", "EQ", "NE", "GE", "LE", "EVEN", "ODD",
+    "MOV", "CMOV", "RET", "RETZERO", "RETNF", "RETZERONF", "INV",
     "CSTF", "MATHST", "MATH", "+", "IMGWID", "ADDIMGW", "SUBIMGW",
     "SIGNEXB", "SIGNEXW", "SIGNEXDW", "SWAP",
     "CALLNF", "CALL"
 };
 
 bool is_reg( size_t t ) { return ( t >= T_RZERO && t <= T_RTMP ); }
-bool is_relation_token( size_t t ) { return ( t >= T_GT && t <= T_LE ); }
+bool is_relation_token( size_t t ) { return ( t >= T_GT && t <= T_ODD ); }
 uint8_t reg_from_token( size_t t ) { return (uint8_t) ( t - T_RZERO ); }
 uint8_t relation_from_token( size_t t ) { return (uint8_t) ( t - T_GT ); }
 uint8_t math_from_token( size_t t ) { return (uint8_t) ( t - T_ADD ); }
