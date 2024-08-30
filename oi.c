@@ -340,8 +340,8 @@ static bool CheckRelation( ioi_t l, ioi_t r, uint8_t relation )
         case 3: { return ( l != r ); }
         case 4: { return ( l >= r ); }
         case 5: { return ( l <= r ); }
-        case 6: { return ( 0 == ( l & 1 ) ); } /* true if left is even. right is ignored */
-        case 7: { return ( 0 != ( l & 1 ) ); } /* true if left is odd. right is ignored */
+        case 6: { return ( (bool) !( l & (ioi_t) 1 ) ); } /* true if left is even. right is ignored */
+        case 7: { return ( (bool) ( l & (ioi_t) 1 ) ); } /* true if left is odd. right is ignored */
         default: { __assume( false ); }
     }
 

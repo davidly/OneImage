@@ -39,7 +39,7 @@ static const char * RegOpString( uint8_t op )
     return RegisterString( reg_from_op( op ) );
 } /* RegOpString */
 
-static const char * relation_strings[] = { "gt", "lt", "eq", "ne", "ge", "le" };
+static const char * relation_strings[] = { "gt", "lt", "eq", "ne", "ge", "le", "even", "odd" };
 
 #ifdef OLDCPU
 static const char * RelationString( r ) uint8_t r;
@@ -47,9 +47,9 @@ static const char * RelationString( r ) uint8_t r;
 static const char * RelationString( uint8_t r )
 #endif
 {
-    if ( r < 6 )
+    if ( r < 8 )
         return relation_strings[ r ];
-    return "unknown!";
+    return "unknown relation!";
 } /* RelationString */
 
 static const char * math_strings[] = { "add", "sub", "imul", "idiv", "or", "xor", "and", "cmp" };
@@ -62,7 +62,7 @@ static const char * MathString( uint8_t r )
 {
     if ( r < 8 )
         return math_strings[ r ];
-    return "unknown!";
+    return "unknown math!";
 } /* MathString */
 
 static const char * syscall_strings[] = { "exit", "print string", "print integer" };
