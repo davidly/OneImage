@@ -136,7 +136,7 @@
             byte 1: Math/Relation/Funct  r1 rhs          bit width ( 0=8, 1=16...)
 
         1 byte operations: high 3 bits 0..7 operate on reg0:   inc, dec, push, pop, zero, shl, shr, inv
-            exceptions:          overridden
+              exceptions:      overridden
               00 halt       -- inc rzero
               08 retzero    -- inc rsp
               20 imulst     -- dec rzero
@@ -173,6 +173,16 @@
               - g++ (Rev3, Built by MSYS2 project) 13.2.0
         - Ubuntu 22.04.3 on x64
               - g++ (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0
+        - Ubuntu 22.04.2 on Arm64
+              - g++ (Ubuntu 11.3.0-1ubuntu1~22.04.1) 11.3.0
+        - Debian GNU/Linux 12 on RISC-V 64 bit
+              - g++ (Debian 13.2.0)
+        - Debian GNU/Linux 10 on Raspberry PI 4 Arm32
+              - g++ (Debian 8.3.0)
+        - Debian GNU/Linux 12 on Raspberry PI 5 Arm64
+              - g++ (Debian 12.2.0-14)
+        - MacOS Sonoma 14.6.1 (23G93) on MacbookAir 3 Arm64
+              - Apple clang version 15.0.0 (clang-1500.3.9.4)
 
     Build notes:
         - One of OI2, OI4, or OI8 must be defined when compiling
@@ -1337,7 +1347,7 @@ uint32_t ExecuteOI()
                     }
                     case 3: /* ldib rdst x */
                     {
-                        set_reg_from_op( op, sign_extend_oi( op1 & 0x1f, 4 ) );
+                        set_reg_from_op( op, sign_extend_oi( ( op1 & 0x1f ), 4 ) );
                         break;
                     }
                     case 4: /* signex */
@@ -1391,7 +1401,7 @@ uint32_t ExecuteOI()
 #endif
                         break;
                     }
-                    case 7: /* moddiv is frame 7. push( r0 / r1 ). r0 = r0 % r1. */
+                    case 7: /* moddiv: push( r0 / r1 ). r0 = r0 % r1. */
                     {
                         moddiv_do( op, op1 );
                         break;
