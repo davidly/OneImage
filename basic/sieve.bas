@@ -1,4 +1,3 @@
-10 SI% = 8190
 20 DIM FL%(8191)
 40 FOR IT% = 0 to 10
 50 CO% = 0
@@ -9,7 +8,7 @@
 100 IF 0 = FL%(I%) goto 180
 105 PR% = I% + I% + 3
 120 K% = I% + PR%
-130 IF K% > SI% goto 170
+130 IF K% > 8190 goto 170
 140 FL%(K%) = 0
 150 K% = K% + PR%
 160 GOTO 130

@@ -1,3 +1,5 @@
+90 rem unnecessary qu% reference so compilers keep it in a register before hi%
+100 qu% = 0
 110 dim a%( 200 )
 120 hi% = 200
 140 n% = 199

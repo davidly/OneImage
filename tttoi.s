@@ -183,8 +183,8 @@ minmax_max:
     call    minmax_min                      ; recurse
 
     pop     rtmp                            ; restore for loop 0..8
-    stob    board[ rtmp ], rzero
     pop     rarg1                           ; restore value
+    stob    board[ rtmp ], rzero
 
     ji      rres, win_score, eq, _max_return ; can't do better than winning
     j       rres, rarg1, le, _max_loop      ; if score not a new high then loop
@@ -244,8 +244,8 @@ minmax_min:
     call    minmax_max                      ; recurse
 
     pop     rtmp                            ; restore for loop 0..8
-    stob    board[ rtmp ], rzero
     pop     rarg1                           ; restore value
+    stob    board[ rtmp ], rzero
 
     ji      rres, lose_score, eq, _min_return ; can't do better than losing
     j       rres, rarg1, ge, _min_loop      ; if score not a new low then loop

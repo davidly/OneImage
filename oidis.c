@@ -307,6 +307,10 @@ const char * DisassembleOI( uint8_t * pop, oi_t rpc, uint8_t image_width )
                         sprintf( buf, "st%s [%s], %s", WidthSuffix( width ), RegOpString( op ), RegOpString( op1 ) );
                     else if ( 1 == op1funct )
                         sprintf( buf, "ld%s %s, [%s]", WidthSuffix( width ), RegOpString( op ), RegOpString( op1 ) );
+                    else if ( 2 == op1funct )
+                        sprintf( buf, "pushtwo %s, %s", RegOpString( op ), RegOpString( op1 ) );
+                    else if ( 3 == op1funct )
+                        sprintf( buf, "poptwo %s, %s", RegOpString( op ), RegOpString( op1 ) );
                 }
                 else if ( 0xc0 == opOperation ) /* mov r0dst r1src */
                     sprintf( buf, "mov %s, %s", RegOpString( op ), RegOpString( op1 ) );

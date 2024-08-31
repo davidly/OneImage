@@ -53,7 +53,7 @@ enum TokenTypes
     T_J, T_JI, T_JREL, T_JRELB, T_SHL, T_SHLIMG, T_SHR, T_SHRIMG, T_MEMF, T_MEMFB, T_STADDB,
     T_ADD, T_SUB, T_IMUL, T_IDIV, T_OR, T_XOR, T_AND, T_CMP,
     T_INC, T_DEC, T_JMP, T_ADDST, T_SUBST, T_IDIVST, T_IMULST,
-    T_CMPST, T_PUSH, T_POP, T_PUSHF, T_STST, T_ZERO, T_SYSCALL, T_MODDIV,
+    T_CMPST, T_PUSH, T_POP, T_PUSHTWO, T_POPTWO, T_PUSHF, T_STST, T_ZERO, T_SYSCALL, T_MODDIV,
     T_RZERO, T_RPC, T_RSP, T_RFRAME, T_RARG1, T_RARG2, T_RRES, T_RTMP,
     T_GT, T_LT, T_EQ, T_NE, T_GE, T_LE, T_EVEN, T_ODD,
     T_MOV, T_CMOV, T_RET, T_RETZERO, T_RETNF, T_RETZERONF, T_INV,
@@ -71,7 +71,7 @@ static const char * TokenSet[] =
     "J", "JI", "JREL", "JRELB", "SHL", "SHLIMG", "SHR", "SHRIMG", "MEMF", "MEMFB", "STADDB",
     "ADD", "SUB", "IMUL", "IDIV", "OR", "XOR", "AND", "CMP",
     "INC", "DEC", "JMP", "ADDST", "SUBST", "IDIVST", "IMULST",
-    "CMPST", "PUSH", "POP", "PUSHF", "STST", "ZERO", "SYSCALL", "MODDIV",
+    "CMPST", "PUSH", "POP", "PUSHTWO", "POPTWO", "PUSHF", "STST", "ZERO", "SYSCALL", "MODDIV",
     "RZERO", "RPC", "RSP", "RFRAME", "RARG1", "RARG2", "RRES", "RTMP",
     "GT", "LT", "EQ", "NE", "GE", "LE", "EVEN", "ODD",
     "MOV", "CMOV", "RET", "RETZERO", "RETNF", "RETZERONF", "INV",
@@ -918,6 +918,34 @@ int cdecl main( int argc, char * argv[] )
 
                 code[ code_so_far++ ] = compose_op( 3, reg_from_token( t1 ), 1 );
                 code[ code_so_far++ ] = compose_op( 4, 0, ( T_SIGNEXB == t ) ? 0 : ( T_SIGNEXW == t ) ? 1 : 2 );
+                break;
+            }
+            case T_PUSHTWO:
+            {
+                if ( 3 != token_count )
+                    show_error( "pushtwo requires two register arguments\n" );
+
+                t1 = find_token( tokens[ 1 ] );
+                t2 = find_token( tokens[ 2 ] );
+                if ( !is_reg( t1 ) || !is_reg( t2 ) )
+                    show_error( "pushtwo requires two register arguments\n" );
+
+                code[ code_so_far++ ] = compose_op( 5, reg_from_token( t1 ), 1 );
+                code[ code_so_far++ ] = compose_op( 2, reg_from_token( t2 ), g_byte_len );
+                break;
+            }
+            case T_POPTWO:
+            {
+                if ( 3 != token_count )
+                    show_error( "poptwo requires two register arguments\n" );
+
+                t1 = find_token( tokens[ 1 ] );
+                t2 = find_token( tokens[ 2 ] );
+                if ( !is_reg( t1 ) || !is_reg( t2 ) )
+                    show_error( "poptwo requires two register arguments\n" );
+
+                code[ code_so_far++ ] = compose_op( 5, reg_from_token( t1 ), 1 );
+                code[ code_so_far++ ] = compose_op( 3, reg_from_token( t2 ), g_byte_len );
                 break;
             }
             case T_PUSHF:
@@ -2436,6 +2464,8 @@ int cdecl main( int argc, char * argv[] )
             case T_SIGNEXW:
             case T_SIGNEXDW:
             case T_SWAP:
+            case T_PUSHTWO:
+            case T_POPTWO:
             {
                 code_so_far += 2;
                 break;
