@@ -57,7 +57,7 @@ enum TokenTypes
     T_RZERO, T_RPC, T_RSP, T_RFRAME, T_RARG1, T_RARG2, T_RRES, T_RTMP,
     T_GT, T_LT, T_EQ, T_NE, T_GE, T_LE, T_EVEN, T_ODD,
     T_MOV, T_CMOV, T_RET, T_RETZERO, T_RETNF, T_RETZERONF, T_INV,
-    T_CSTF, T_MATHST, T_MATH, T_PLUS, T_IMGWID, T_ADDIMGW, T_SUBIMGW,
+    T_CSTF, T_MATHST, T_MATH, T_PLUS, T_IMGWID, T_ADDIMGW, T_SUBIMGW, T_ADDNATW, T_SUBNATW, T_NATWID,
     T_SIGNEXB, T_SIGNEXW, T_SIGNEXDW, T_SWAP,
     T_CALLNF, T_CALL
 };
@@ -75,7 +75,7 @@ static const char * TokenSet[] =
     "RZERO", "RPC", "RSP", "RFRAME", "RARG1", "RARG2", "RRES", "RTMP",
     "GT", "LT", "EQ", "NE", "GE", "LE", "EVEN", "ODD",
     "MOV", "CMOV", "RET", "RETZERO", "RETNF", "RETZERONF", "INV",
-    "CSTF", "MATHST", "MATH", "+", "IMGWID", "ADDIMGW", "SUBIMGW",
+    "CSTF", "MATHST", "MATH", "+", "IMGWID", "ADDIMGW", "SUBIMGW", "ADDNATW", "SUBNATW", "NATWID",
     "SIGNEXB", "SIGNEXW", "SIGNEXDW", "SWAP",
     "CALLNF", "CALL"
 };
@@ -878,6 +878,13 @@ int cdecl main( int argc, char * argv[] )
                 code[ code_so_far++ ] = 0x84;
                 break;
             }
+            case T_NATWID:
+            {
+                if ( 1 != token_count )
+                    show_error( "natwid takes no arguments" );
+                code[ code_so_far++ ] = 0xc8;
+                break;
+            }
             case T_ADDIMGW:
             case T_SUBIMGW:
             {
@@ -890,6 +897,20 @@ int cdecl main( int argc, char * argv[] )
 
                 code[ code_so_far++ ] = compose_op( 4, reg_from_token( t1 ), 1 );
                 code[ code_so_far++ ] = compose_op( 3, 0, ( T_ADDIMGW == t ) ? 0 : 1 );
+                break;
+            }
+            case T_ADDNATW:
+            case T_SUBNATW:
+            {
+                if ( 2 != token_count )
+                    show_error( "addnatw and subnatw take one register argument: addnatw reg\n" );
+
+                t1 = find_token( tokens[ 1 ] );
+                if ( !is_reg( t1 ) )
+                    show_error( "addnatw and subnatw take one register argument: addnatw reg\n" );
+
+                code[ code_so_far++ ] = compose_op( 4, reg_from_token( t1 ), 1 );
+                code[ code_so_far++ ] = compose_op( 6, 0, ( T_ADDNATW == t ) ? 0 : 1 );
                 break;
             }
             case T_STST:
@@ -2456,6 +2477,8 @@ int cdecl main( int argc, char * argv[] )
             case T_STST:
             case T_ADDIMGW:
             case T_SUBIMGW:
+            case T_ADDNATW:
+            case T_SUBNATW:
             case T_STB:
             case T_MEMF:
             case T_MEMFB:
@@ -2494,6 +2517,7 @@ int cdecl main( int argc, char * argv[] )
             case T_INV:
             case T_SUBST:
             case T_IMGWID:
+            case T_NATWID:
             {
                 code_so_far++;
                 break;

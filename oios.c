@@ -39,6 +39,7 @@ char * strchr( pc, c ) char * pc; char c;
 int g_halted = 0;
 uint8_t * ram = 0;
 uint32_t ram_size = 0;
+uint8_t image_width;
 
 #ifdef AZTECCPM
 /* note that first two arguments are reversed */
@@ -74,34 +75,36 @@ void OISyscall( size_t function )
         }
         case 2:
         {
-#ifdef OI2
-            printf( "%d", (int16_t) g_oi.rarg1 );
+            if ( 2 == image_width )
+            {
+                printf( "%d", (int16_t) g_oi.rarg1 );
 #ifndef NDEBUG
-            trace( "syscall integer: %d\n", (int16_t) g_oi.rarg1 );
+                trace( "syscall integer: %d\n", (int16_t) g_oi.rarg1 );
 #endif
-#endif
-
-#ifdef OI4
-
+            }
+            else if ( 4 == image_width )
+            {
 #ifdef MSC6
-            printf( "%ld", (int32_t) g_oi.rarg1 );
+                printf( "%ld", (int32_t) g_oi.rarg1 );
 #ifndef NDEBUG
-            trace( "syscall integer: %ld\n", (int32_t) g_oi.rarg1 );
-#endif /* NDEBUG */
-
+                trace( "syscall integer: %ld\n", (int32_t) g_oi.rarg1 );
+#endif
 #else /* MSC6 */
-            printf( "%d", (int32_t) g_oi.rarg1 );
+                printf( "%d", (int32_t) g_oi.rarg1 );
 #ifndef NDEBUG
-            trace( "syscall integer: %d\n", (int32_t) g_oi.rarg1 );
-#endif /* NDEBUG */
+                trace( "syscall integer: %d\n", (int32_t) g_oi.rarg1 );
+#endif
 #endif /* MSC6 */
-#endif /* OI4 */
+            }
 
 #ifdef OI8
-            printf( "%lld", (int64_t) g_oi.rarg1 );
+            else if ( 8 == image_width )
+            {
+                printf( "%lld", (int64_t) g_oi.rarg1 );
 #ifndef NDEBUG
-            trace( "syscall integer: %lld\n", (int64_t) g_oi.rarg1 );
+                trace( "syscall integer: %lld\n", (int64_t) g_oi.rarg1 );
 #endif
+            }
 #endif
             break;
         }
@@ -233,7 +236,6 @@ int cdecl main( int argc, char * argv[] )
     int i, first_child_arg, child_argc;
     bool show_image_header, tracing, instruction_tracing, show_perf;
     uint32_t total_instructions, ram_requirement;
-    uint8_t image_width;
     struct OIHeader h;
     static char appname[ 80 ];
 
@@ -352,23 +354,16 @@ int cdecl main( int argc, char * argv[] )
     }
 #endif
 #ifdef OI4
-    if ( 4 != image_width )
+    if ( image_width > 4 )
     {
-        printf( "this version of oios only supports 4-byte image width binaries, and this one has %u\n", image_width );
-        exit( 1 );
-    }
-#endif
-#ifdef OI8
-    if ( 8 != image_width )
-    {
-        printf( "this version of oios only supports 8-byte image width binaries, and this one has %u\n", image_width );
+        printf( "this version of oios only supports 2- and 4-byte image width binaries, and this one has %u\n", image_width );
         exit( 1 );
     }
 #endif
 
     head_len = size_args_env( appname, argc, argv, & child_argc, first_child_arg );
     ram_requirement = (uint32_t) ( h.loRamRequired + head_len );
-    ram_size = RamInformationOI( ram_requirement, & ram );
+    ram_size = RamInformationOI( ram_requirement, & ram, image_width );
     if ( 0 == ram )
     {
         printf( "insufficient RAM for this application. required %u, available %u\n", (int) ram_requirement, (int) ram_size );

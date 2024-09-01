@@ -47,7 +47,6 @@
 
 #ifdef OI2
 
-#define OI_IMAGE_SHIFT 1
     typedef uint16_t oi_t;
     typedef int16_t ioi_t;
 
@@ -70,16 +69,15 @@
         uint16_t rtmp;    /* 4th argument if needed */
         uint16_t a_rtmp;
         uint8_t image_width; /* 2, 4, or 8 */
+        uint8_t image_shift; /* 1, 2, or 3 */
     };
 
 #else /* OI2 */
 
 #ifdef OI4
-#define OI_IMAGE_SHIFT 2
     typedef uint32_t oi_t;
     typedef int32_t ioi_t;
 #else /* OI4 */
-    #define OI_IMAGE_SHIFT 3
     typedef uint64_t oi_t;
     typedef int64_t ioi_t;
 #endif /* OI4 */
@@ -95,6 +93,7 @@
         oi_t rres;    /* by convention, where functions return results. 3rd argument if needed */
         oi_t rtmp;    /* 4th argument if needed */
         uint8_t image_width; /* 2, 4, or 8 */
+        uint8_t image_shift; /* 1, 2, or 3 */
     };
 
 #endif /* OI2 */
@@ -109,7 +108,7 @@
 extern struct OneImage g_oi;
 
 #ifdef HISOFTCPM
-    extern uint32_t RamInformationOI( uint32_t, uint8_t ** );
+    extern uint32_t RamInformationOI( uint32_t, uint8_t **, uint8_t );
     extern void ResetOI( oi_t, oi_t, oi_t, uint8_t );
     extern uint32_t ExecuteOI( void );
     extern void TraceInstructionsOI( int );
@@ -130,7 +129,7 @@ extern struct OneImage g_oi;
     extern void OIHalt();
     extern void OIHardTermination();
 #else
-    extern uint32_t RamInformationOI( uint32_t required, uint8_t ** ppRam );
+    extern uint32_t RamInformationOI( uint32_t required, uint8_t ** ppRam, uint8_t image_width );
     extern void ResetOI( oi_t mem_size, oi_t pc, oi_t sp, uint8_t image_width );
     extern uint32_t ExecuteOI( void );
     extern void TraceInstructionsOI( bool trace );

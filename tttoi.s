@@ -40,7 +40,7 @@ start:
     ldf     rarg1, 0
     ji      rarg1, 2, ne, _no_argument
     ldf     rarg1, 1
-    imgwid
+    natwid
     add     rarg1, rres
     ld      rarg1, [rarg1]
 

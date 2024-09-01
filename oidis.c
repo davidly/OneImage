@@ -224,6 +224,7 @@ const char * DisassembleOI( uint8_t * pop, oi_t rpc, uint8_t image_width )
             { sprintf( buf, "shl %s", RegOpString( op ) ); break; }
         case 0xa8: { strcpy( buf, "idivst" ); break; }
         case 0xc0: { strcpy( buf, "ret" ); break; }
+        case 0xc8: { strcpy( buf, "natwid" ); break; }
         case 0xcc: case 0xd0: case 0xd4: case 0xd8: case 0xdc:
             { sprintf( buf, "shr %s", RegOpString( op ) ); break; }
         case 0xe0: { strcpy( buf, "andst" ); break; }
@@ -298,6 +299,13 @@ const char * DisassembleOI( uint8_t * pop, oi_t rpc, uint8_t image_width )
                         sprintf( buf, "stinc%s [%s], %s", WidthSuffix( width ), RegOpString( op ), RegOpString( op1 ) );
                     else if ( 5 == op1funct ) /* swap reg0, reg1 */
                         sprintf( buf, "swap %s, %s", RegOpString( op ), RegOpString( op1 ) );
+                    else if ( 6 == op1funct )
+                    {
+                        if ( 0 == width ) /* addnatw reg0 */
+                            sprintf( buf, "addnatw %s", RegOpString( op ) );
+                        else if ( 1 == width ) /* addnatw reg0 */
+                            sprintf( buf, "subnatw %s", RegOpString( op ) );
+                    }
                 }
                 else if ( 0xa0 == opOperation ) /* st [r0dst] r1src */
                 {

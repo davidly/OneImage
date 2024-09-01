@@ -18,7 +18,7 @@ define array_size 20
     word    word_array[ array_size ]
     image_t native_array[ array_size ]
     image_t g_zero
-    string  str_failure "failure in test "
+    string  str_failure "testoi failure in test "
 .dataend
 
 .code
@@ -36,7 +36,7 @@ start:
   _next_arg:
     ld      rarg1, [rarg2]
     syscall syscall_print_string
-    addimgw rarg2
+    addnatw rarg2
     push    rarg1
     ldi     rarg1, str_nl
     syscall syscall_print_string
@@ -99,6 +99,7 @@ start:
     ldib    rtmp, -3
     ldi     rarg1, -3 
     j       rtmp, rarg1, ne, test_fail_10
+
     ldi     rarg2, -300000
     ldi     rres, 100000
     idiv    rarg2, rres
@@ -161,7 +162,7 @@ start:
     j       rres, rzero, ne, test_fail_19
 
     ldi     rarg1, 105
-    ldi		rarg2, 92
+    ldi         rarg2, 92
     cmp     rres, rarg1, rarg2, ge
     j       rres, rzero, eq, test_fail_20
     cmp     rres, rarg1, rarg2, lt

@@ -1,4 +1,8 @@
-#ifndef NDEBUG
+#ifdef NDEBUG
+
+#define trace( x )
+
+#else
 
 #include <stdio.h>
 #include <stdlib.h>
