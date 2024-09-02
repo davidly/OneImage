@@ -427,14 +427,19 @@ const char * DisassembleOI( uint8_t * pop, oi_t rpc, uint8_t image_width )
                 }
                 else if ( 5 == opfunct ) /* ldo */
                 {
-                    width = (uint8_t) width_from_op( op1 );
-                    op1funct = funct_from_op( op1 );
-                    if ( 0 == op1funct )
-                        sprintf( buf, "ldo%s %s, %s[%s]", WidthSuffix( width ), RegOpString( op ), relative_value( pop, rpc, image_width ), RegOpString( op1 ) );
-                    else if ( 1 == op1funct )
-                        sprintf( buf, "ldoinc%s %s, %s[%s]", WidthSuffix( width ), RegOpString( op ), relative_value( pop, rpc, image_width ), RegOpString( op1 ) );
-                    else if ( 2 == op1funct )
-                        sprintf( buf, "ldi %s, %d", RegOpString( op ), (int) (int16_t) getword( pop + 2 ) );
+                    if ( 0xa3 == op )
+                        strcpy( buf, "cpuinfo" );
+                    else
+                    {
+                        width = (uint8_t) width_from_op( op1 );
+                        op1funct = funct_from_op( op1 );
+                        if ( 0 == op1funct )
+                            sprintf( buf, "ldo%s %s, %s[%s]", WidthSuffix( width ), RegOpString( op ), relative_value( pop, rpc, image_width ), RegOpString( op1 ) );
+                        else if ( 1 == op1funct )
+                            sprintf( buf, "ldoinc%s %s, %s[%s]", WidthSuffix( width ), RegOpString( op ), relative_value( pop, rpc, image_width ), RegOpString( op1 ) );
+                        else if ( 2 == op1funct )
+                            sprintf( buf, "ldi %s, %d", RegOpString( op ), (int) (int16_t) getword( pop + 2 ) );
+                    }
                 }
                 else if ( 6 == opfunct ) /* ldb r0dst, [address] */
                 {

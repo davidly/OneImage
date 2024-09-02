@@ -84,7 +84,7 @@
                     1:   ldoinc:       r1++ (always one independent of width) then r0dst = address[ r1off ]. offset is multiplied by width
                     2:   ldi           constant -32768..32767 sign extended. use ldb if possible and ldi's 3-byte form if the number is large or a 2-byte native width
                     exceptions:          overridden
-                        a3 UNUSED --     ldo/ldi rzero, ...
+                        a3 cpuinfo --     ldo/ldi rzero, ... / returns rres_16 version, rtmp_16 2 ascii char ID
                 6:  value of funct in op1
                     0:   ld:           r0dst = [ address ]
                     1:   sti:          [address ], r1 -8..7
@@ -587,7 +587,7 @@ static const char * render_value( oi_t val, uint8_t width )
 
 void TraceStateOI()
 {
-    trace( "%s", DisassembleOI( ram_address( g_oi.rpc ), g_oi.rpc, IMAGE_WIDTH );
+    trace( "%s", DisassembleOI( ram_address( g_oi.rpc ), g_oi.rpc, IMAGE_WIDTH ) );
     trace( "rzero:  %s\n", render_value( g_oi.rzero, sizeof( oi_t ) ) );
     trace( "rpc:    %s\n", render_value( g_oi.rpc, sizeof( oi_t ) ) );
     trace( "rsp:    %s\n", render_value( g_oi.rsp, sizeof( oi_t ) ) );
@@ -1633,6 +1633,12 @@ uint32_t ExecuteOI()
             case 0xb1: case 0xb5: case 0xb9: case 0xbd:
             {
                 op_a0_b0_do( op );
+                break;
+            }
+            case 0xa3: /* cpuinfo */
+            {
+                g_oi.rres = 1; /* version 1 */
+                g_oi.rtmp = 'd' + ( 'l' << 8 ); /* ID */
                 break;
             }
             case 0xc5: case 0xc9: case 0xcd: /* mov r0dst r1src */

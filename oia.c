@@ -59,7 +59,7 @@ enum TokenTypes
     T_MOV, T_CMOV, T_RET, T_RETZERO, T_RETNF, T_RETZERONF, T_INV,
     T_CSTF, T_MATHST, T_MATH, T_PLUS, T_IMGWID, T_ADDIMGW, T_SUBIMGW, T_ADDNATW, T_SUBNATW, T_NATWID,
     T_SIGNEXB, T_SIGNEXW, T_SIGNEXDW, T_SWAP,
-    T_CALLNF, T_CALL
+    T_CPUINFO, T_CALLNF, T_CALL
 };
 
 static const char * TokenSet[] =
@@ -77,7 +77,7 @@ static const char * TokenSet[] =
     "MOV", "CMOV", "RET", "RETZERO", "RETNF", "RETZERONF", "INV",
     "CSTF", "MATHST", "MATH", "+", "IMGWID", "ADDIMGW", "SUBIMGW", "ADDNATW", "SUBNATW", "NATWID",
     "SIGNEXB", "SIGNEXW", "SIGNEXDW", "SWAP",
-    "CALLNF", "CALL"
+    "CPUINFO", "CALLNF", "CALL"
 };
 
 bool is_reg( size_t t ) { return ( t >= T_RZERO && t <= T_RTMP ); }
@@ -871,6 +871,15 @@ int cdecl main( int argc, char * argv[] )
                 initialized_data_so_far += size;
                 break;
             }
+            case T_CPUINFO:
+            {
+                if ( 1 != token_count )
+                    show_error( "cpuinfo takes no arguments" );
+                code[ code_so_far++ ] = 0xa3;
+                code[ code_so_far++ ] = 0;
+                initialize_word_value( & code_so_far, 0 );
+                break;
+            }
             case T_IMGWID:
             {
                 if ( 1 != token_count )
@@ -1343,6 +1352,9 @@ int cdecl main( int argc, char * argv[] )
                 if ( ( 2 != token_count ) || ( ( 2 == token_count ) && ! is_reg( t1 ) ) )
                     show_error( "push takes a register argument" );
 
+                if ( T_RSP == t1 )
+                    show_error( "push rsp isn't valid" );
+
                 reg = reg_from_token( t1 );
                 code[ code_so_far++ ] = compose_op( 2, reg, 0 );
                 break;
@@ -1352,6 +1364,9 @@ int cdecl main( int argc, char * argv[] )
                 t1 = find_token( tokens[ 1 ] );
                 if ( ( 2 != token_count ) || ( ( 2 == token_count ) && ! is_reg( t1 ) ) )
                     show_error( "pop takes a register argument" );
+
+                if ( T_RSP == t1 )
+                    show_error( "pop rsp isn't valid" );
 
                 reg = reg_from_token( t1 );
                 code[ code_so_far++ ] = compose_op( 3, reg, 0 );
@@ -2451,6 +2466,7 @@ int cdecl main( int argc, char * argv[] )
                 }
                 break;
             }
+            case T_CPUINFO:
             case T_CSTF:
             case T_MATH:
             case T_CMP:

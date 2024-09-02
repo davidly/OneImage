@@ -162,11 +162,23 @@ start:
     j       rres, rzero, ne, test_fail_19
 
     ldi     rarg1, 105
-    ldi         rarg2, 92
+    ldi     rarg2, 92
     cmp     rres, rarg1, rarg2, ge
     j       rres, rzero, eq, test_fail_20
     cmp     rres, rarg1, rarg2, lt
     j       rres, rzero, ne, test_fail_21
+
+    cpuinfo
+    ldib    rarg1, 1
+    j       rres, rarg1, ne test_fail_22
+    ldi     rarg1, 27748
+    j       rtmp, rarg1, ne test_fail_23
+
+    mov     rres, rsp
+    push    rres
+    pop     rres
+    ld      rtmp, [rres]  ; will crash if sign extended (it shouldn't be) and not masked
+    j       rtmp, rzero, ne, test_fail_24 ; return address from main should be 0
 
     ldi     rarg1, str_done
     syscall syscall_print_string
@@ -255,6 +267,18 @@ test_fail_20:
 
 test_fail_21:
     ldi    rarg1, 21
+    jmp    failure
+
+test_fail_22:
+    ldi    rarg1, 22
+    jmp    failure
+
+test_fail_23:
+    ldi    rarg1, 23
+    jmp    failure
+
+test_fail_24:
+    ldi    rarg1, 24
     jmp    failure
 
 failure:
