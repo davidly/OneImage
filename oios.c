@@ -346,6 +346,20 @@ int cdecl main( int argc, char * argv[] )
         usage();
     }
 
+#ifndef NDEBUG
+    trace( "app: '%s'\n", appname );
+    trace( "  signature:                %c%c\n", h.sig0, h.sig1 );
+    trace( "  version:                  %u\n", h.version );
+    trace( "  flags:                    %04xh\n", h.flags );
+    trace( "  ram required:             %u\n", h.loRamRequired );
+    trace( "  code size:                %u\n", h.cbCode );
+    trace( "  initialized data size:    %u\n", h.cbInitializedData );
+    trace( "  zero-filled data size:    %u\n", h.cbZeroFilledData );
+    trace( "  stack size:               %u\n", h.cbStack );
+    trace( "  initial PC:               %u\n", h.loInitialPC );
+    trace( "image width: %d\n", image_width );
+#endif
+
 #ifdef OI2
     if ( 2 != image_width )
     {

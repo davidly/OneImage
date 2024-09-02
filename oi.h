@@ -92,6 +92,7 @@
         oi_t rarg2;   /* second argument */
         oi_t rres;    /* by convention, where functions return results. 3rd argument if needed */
         oi_t rtmp;    /* 4th argument if needed */
+        oi_t address_mask; /* generally used to mask addresses when image width < native width */
         uint8_t image_width; /* 2, 4, or 8 */
         uint8_t image_shift; /* 1, 2, or 3 */
     };

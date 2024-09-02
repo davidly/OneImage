@@ -96,6 +96,7 @@
             ldae target is always rres. register is multiplied by image width and added to address for read. load array entry.
             following the first byte are image width bytes: 2, 4, 8
             jmp, inc, dec, call all add unsigned reg0 to target address
+            3-byte instructions always opererate on image width quantities
             exceptions:      overridden
                02 UNUSED  -- ld rzero, [address]
                22 UNUSED  -- ldi rzero, XXXX
@@ -252,27 +253,44 @@ void TraceInstructionsOI( bool t )
 
 /* these macros lose safety and readability over inlined functions, but for older compilers it's much faster */
 
-#define get_byte( address ) ( ram[ address ] )
-#define set_byte( address, val ) ( ram[ address ] = val )
+#ifdef OI2
+#define access_ram( address ) ( ram[ address ] )
+#define ram_address( address ) ( ram + ( address ) )
+#define IMAGE_WIDTH 2
+#else
+#define access_ram( address ) ( ram[ ( address ) & g_oi.address_mask ] )
+#define ram_address( address ) ( & ram[ ( address ) & g_oi.address_mask ] )
+#define IMAGE_WIDTH g_oi.image_width
+#endif
 
-#define get_word( address ) ( * (uint16_t *) ( ram + address ) )
-#define set_word( address, val ) ( * (uint16_t *) ( ram + address ) = val )
+#define get_byte( address ) ( access_ram( address ) )
+#define set_byte( address, val ) ( access_ram( address ) = val )
 
-#define get_oiword( address ) ( * (oi_t *) ( ram + address ) )
-#define set_oiword( address, val ) ( * (oi_t *) ( ram + address ) = val )
+#define get_word( address ) ( * (uint16_t *) ( ram_address(address ) ) )
+#define set_word( address, val ) ( * (uint16_t *) ( ram_address( address ) ) = val )
 
+#define get_oiword( address ) ( * (oi_t *) ( ram_address( address ) ) )
+#define set_oiword( address, val ) ( * (oi_t *) ( ram_address( address ) ) = val )
+
+#ifdef OI4
+/* no mask required */
 #define get_dword( address ) ( * (uint32_t *) ( ram + address ) )
 #define set_dword( address, val ) ( * (uint32_t *) ( ram + address ) = val )
+#else
+#define get_dword( address ) ( * (uint32_t *) ( ram_address( address ) ) )
+#define set_dword( address, val ) ( * (uint32_t *) ( ram_address( address ) ) = val )
+#endif /* OI4 */
 
 #ifdef OI8
+/* no mask required */
 #define get_qword( address ) ( * (uint64_t *) ( ram + address ) )
 #define set_qword( address, val ) ( * (uint64_t *) ( ram + address ) = val )
 #endif /* OI8 */
 
 #ifdef OI8
-#define get_preg_from_op( op ) ( (oi_t *) ( ( (uint8_t *) & g_oi.rzero ) + ( ( op << 1 ) & 0x38 ) ) )
+#define get_preg_from_op( op ) ((oi_t *) (((uint8_t *) & g_oi.rzero) + ((op << 1) & 0x38)))
 #else
-#define get_preg_from_op( op ) ( (oi_t *) ( ( (uint8_t *) & g_oi.rzero ) + ( op & 0x1c ) ) )
+#define get_preg_from_op( op ) ((oi_t *) (((uint8_t *) & g_oi.rzero) + (op & 0x1c)))
 #endif /* OI8 */
 
 #define get_reg_from_op( op ) ( * get_preg_from_op( op ) )
@@ -385,6 +403,7 @@ void ResetOI( oi_t memSize, oi_t pc, oi_t sp, uint8_t imageWidth )
 #else
         pget_imgword = get_imgword;
         pset_imgword = set_imgword;
+        g_oi.address_mask = 0xffff;
 #endif /* OI2 */
 
     }
@@ -394,6 +413,7 @@ void ResetOI( oi_t memSize, oi_t pc, oi_t sp, uint8_t imageWidth )
         g_oi.image_shift = 2;
         pget_imgword = get_imgdword;
         pset_imgword = set_imgdword;
+        g_oi.address_mask = 0xffffffff;
     }
 #endif /* OI2 */
 #ifdef OI8
@@ -402,6 +422,7 @@ void ResetOI( oi_t memSize, oi_t pc, oi_t sp, uint8_t imageWidth )
         g_oi.image_shift = 3;
         pget_imgword = get_imgqword;
         pset_imgword = set_imgqword;
+        g_oi.address_mask = 0xffffffffffffffff;
     }
 #endif /* OI8 */
 
@@ -566,7 +587,7 @@ static const char * render_value( oi_t val, uint8_t width )
 
 void TraceStateOI()
 {
-    trace( "%s", DisassembleOI( ram + g_oi.rpc, g_oi.rpc, g_oi.image_width ) );
+    trace( "%s", DisassembleOI( ram_address( g_oi.rpc ), g_oi.rpc, IMAGE_WIDTH );
     trace( "rzero:  %s\n", render_value( g_oi.rzero, sizeof( oi_t ) ) );
     trace( "rpc:    %s\n", render_value( g_oi.rpc, sizeof( oi_t ) ) );
     trace( "rsp:    %s\n", render_value( g_oi.rsp, sizeof( oi_t ) ) );
@@ -589,7 +610,7 @@ static void TraceState()
     uint8_t op, op1, op2, op3;
     oi_t tos;
     const char * pdis;
-    uint8_t * popcodes = ram + g_oi.rpc;
+    uint8_t * popcodes = ram_address( g_oi.rpc );
 
     op = popcodes[ 0 ];
     op1 = popcodes[ 1 ];
@@ -627,13 +648,13 @@ static void TraceState()
 
 static void memfb_do()
 {
-    memset( & ( ram[ g_oi.rarg1 + g_oi.rres ] ), (uint8_t) g_oi.rtmp, (size_t) g_oi.rarg2 );
+    memset( ram_address( g_oi.rarg1 + g_oi.rres ), (uint8_t) g_oi.rtmp, (size_t) g_oi.rarg2 );
 } /* memfb_do */
 
 static void memfw_do()
 {
     uint16_t * pw, * pbeyond;
-    pw = (uint16_t *) & ram[ g_oi.rarg1 ];
+    pw = (uint16_t *) ram_address( g_oi.rarg1 );
     pw += g_oi.rres;
     pbeyond = pw + g_oi.rarg2;
     while ( pw != pbeyond )
@@ -645,7 +666,7 @@ static void memfw_do()
 static void memfdw_do()
 {
     uint32_t * p, * pbeyond;
-    p = (uint32_t *) & ram[ g_oi.rarg1 ];
+    p = (uint32_t *) ram_address( g_oi.rarg1 );
     p += g_oi.rres;
     pbeyond = p + g_oi.rarg2;
     while ( p != pbeyond )
@@ -657,7 +678,7 @@ static void memfdw_do()
 static void memfqw_do()
 {
     uint64_t * p, * pbeyond;
-    p = (uint64_t *) & ram[ g_oi.rarg1 ];
+    p = (uint64_t *) ram_address( g_oi.rarg1 );
     p += g_oi.rres;
     pbeyond = p + g_oi.rarg2;
     while ( p != pbeyond )
@@ -671,7 +692,7 @@ static void staddb_do()
 {
     uint8_t * pb, * pend, * pstart;
     oi_t tadd;
-    pb = & ( ram[ g_oi.rtmp + g_oi.rarg1 ] );
+    pb = ram_address( g_oi.rtmp + g_oi.rarg1 );
     pstart = pb;
     pend = pb + ( g_oi.rres - g_oi.rtmp );
     tadd = g_oi.rarg2;
@@ -688,7 +709,7 @@ static void staddb_do()
 static void staddw_do()
 {
     uint16_t * pw;
-    pw = (uint16_t *) & ( ram[ g_oi.rtmp + g_oi.rarg1 ] );
+    pw = (uint16_t *) ram_address( g_oi.rtmp + g_oi.rarg1 );
     do
     {
         *pw = 0;
@@ -702,7 +723,7 @@ static void staddw_do()
 static void stadddw_do()
 {
     uint32_t * pw;
-    pw = (uint32_t *) & ( ram[ g_oi.rtmp + g_oi.rarg1 ] );
+    pw = (uint32_t *) ram_address( g_oi.rtmp + g_oi.rarg1 );
     do
     {
         *pw = 0;
@@ -716,7 +737,7 @@ static void stadddw_do()
 static void staddqw_do()
 {
     uint64_t * pw;
-    pw = (uint64_t *) & ( ram[ g_oi.rtmp + g_oi.rarg1 ] );
+    pw = (uint64_t *) ram_address( g_oi.rtmp + g_oi.rarg1 );
     do
     {
         *pw = 0;
@@ -736,6 +757,7 @@ static void ldo_do( opcode_t op )
 {
     size_t op1;
     uint8_t width, funct1;
+    oi_t reg1;
     ioi_t ival;
 
     op1 = get_op1();
@@ -754,7 +776,10 @@ static void ldo_do( opcode_t op )
         if ( (oi_t) 0 == width )
             set_reg_from_op( op, get_byte( g_oi.rpc + ival + get_reg_from_op( op1 ) ) ); /* ldob */
         else if_1_is_width
-            set_reg_from_op( op, get_word( g_oi.rpc + ival + ( get_reg_from_op( op1 ) << 1 ) ) ); /* ldow */
+        {
+            reg1 = get_reg_from_op( op1 ); /* separate statement required for HiSoft C on CP/M */
+            set_reg_from_op( op, get_word( g_oi.rpc + ival + ( reg1 << 1 ) ) ); /* ldow */
+        }
 #ifndef OI2
         else if_2_is_width
             set_reg_from_op( op, get_dword( g_oi.rpc + ival + ( get_reg_from_op( op1 ) << 2 ) ) ); /* ldodw */
@@ -809,7 +834,7 @@ void cstf_do( opcode_t op )
     val = get_reg_from_op( op );
     op1 = get_op1();
     if ( CheckRelation( val, get_reg_from_op( op1 ), funct_from_op( op1 ) ) )
-        set_oiword( frame_offset( (ioi_t) reg_from_op( ram[ g_oi.rpc + 2 ] ) ), val );
+        set_oiword( frame_offset( (ioi_t) reg_from_op( get_byte( g_oi.rpc + 2 ) ) ), val );
 } /* cstf_do */
 
 #ifdef OLDCPU
@@ -1042,9 +1067,9 @@ __forceinline static bool op_80_90_do( opcode_t op )
         {
             width = width_from_op( op1 );
             if ( 0 == width )
-                set_reg_from_op( op, get_reg_from_op( op ) + (oi_t) g_oi.image_width );
+                set_reg_from_op( op, get_reg_from_op( op ) + (oi_t) IMAGE_WIDTH );
             else if ( 1 == width )
-                set_reg_from_op( op, get_reg_from_op( op ) - (oi_t) g_oi.image_width );
+                set_reg_from_op( op, get_reg_from_op( op ) - (oi_t) IMAGE_WIDTH );
             break;
         }
         case 4: /* stinc [reg0], reg1  -- then increment reg0 by width of store */
@@ -1165,7 +1190,7 @@ uint32_t ExecuteOI()
             }
             case 0x84: /* imgwid */
             {
-                g_oi.rres = g_oi.image_width;
+                g_oi.rres = IMAGE_WIDTH;
                 break;
             }
             case 0x8c: case 0x90: case 0x94: case 0x98: case 0x9c: /* zero r */
@@ -1250,15 +1275,15 @@ uint32_t ExecuteOI()
             case 0x92: case 0x96: case 0x9a: case 0x9e:
             {
 #ifdef OI2
-                ( * (oi_t *) ( ram + read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op ) ) )++;
+                ( * (oi_t *) ( ram_address( read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op ) ) ) )++;
 #else
                 if ( 2 == g_oi.image_width )
-                    ( * (uint16_t *) ( ram + read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op ) ) )++;
+                    ( * (uint16_t *) ( ram_address( read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op ) ) ) )++;
                 else if ( 4 == g_oi.image_width )
-                    ( * (uint32_t *) ( ram + read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op ) ) )++;
+                    ( * (uint32_t *) ( ram_address( read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op ) ) ) )++;
 #ifdef OI8
                 else if ( 8 == g_oi.image_width )
-                    ( * (uint64_t *) ( ram + read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op ) ) )++;
+                    ( * (uint64_t *) ( ram_address( read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op ) ) ) )++;
 #endif /* OI8 */
 #endif /* OI2 */
                 break;
@@ -1267,15 +1292,15 @@ uint32_t ExecuteOI()
             case 0xb2: case 0xb6: case 0xba: case 0xbe: 
             {
 #ifdef OI2
-                ( * (oi_t *) ( ram + read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op ) ) )--;
+                ( * (oi_t *) ( ram_address( read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op ) ) ) )--;
 #else
                 if ( 2 == g_oi.image_width )
-                    ( * (uint16_t *) ( ram + read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op ) ) )--;
+                    ( * (uint16_t *) ( ram_address( read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op ) ) ) )--;
                 else if ( 4 == g_oi.image_width )
-                    ( * (uint32_t *) ( ram + read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op ) ) )--;
+                    ( * (uint32_t *) ( ram_address( read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op ) ) ) )--;
 #ifdef OI8
                 else if ( 8 == g_oi.image_width )
-                    ( * (uint64_t *) ( ram + read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op ) ) )--;
+                    ( * (uint64_t *) ( ram_address( read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op ) ) ) )--;
 #endif /* OI8 */
 #endif /* OI2 */
                 break;
@@ -1283,16 +1308,21 @@ uint32_t ExecuteOI()
             case 0xc2: case 0xc6: case 0xca: case 0xce: /* ldae rres (implied), address[ r ] */
             case 0xd2: case 0xd6: case 0xda: case 0xde: 
             {
+#ifdef OI2
+                val = get_reg_from_op( op ); /* separate statement needed for HiSoft C on CP/M */
+                g_oi.rres = read_imgword( read_imgword( g_oi.rpc + 1 ) + ( IMAGE_WIDTH * val ) );
+#else
                 g_oi.rres = read_imgword( read_imgword( g_oi.rpc + 1 ) + ( g_oi.image_width * get_reg_from_op( op ) ) );
+#endif
                 break;
             }
             case 0xe2: case 0xe6: case 0xea: case 0xee: /* call address */
             case 0xf2: case 0xf6: case 0xfa: case 0xfe: 
             {
                 push( g_oi.rframe );
-                push( g_oi.rpc + 1 + g_oi.image_width );
+                push( g_oi.rpc + 1 + IMAGE_WIDTH );
                 g_oi.rframe = g_oi.rsp - sizeof( oi_t ); /* point at first local variable (if any) */
-                g_oi.rpc = read_imgword( g_oi.rpc + 1 ) + ( g_oi.image_width * get_reg_from_op( op ) );
+                g_oi.rpc = read_imgword( g_oi.rpc + 1 ) + ( IMAGE_WIDTH * get_reg_from_op( op ) );
                 continue;
             }
             case 0x03: case 0x07: case 0x0b: case 0x0f: /* j / ji / jrelb / jrel */
@@ -1374,19 +1404,21 @@ uint32_t ExecuteOI()
                         push( g_oi.rframe );
                         push( g_oi.rpc + 4 );
                         g_oi.rframe = g_oi.rsp - sizeof( oi_t ); /* point at first local variable (if any) */
-                        g_oi.rpc = read_imgword( g_oi.rpc + ival + ( g_oi.image_width * get_reg_from_op( op ) ) );
+                        val = get_reg_from_op( op );
+                        g_oi.rpc = read_imgword( g_oi.rpc + ival + ( IMAGE_WIDTH * val ) );
                         continue;
                     }
                     case 1: /* callnf address[ r0 ] */
                     {
                         push( g_oi.rpc + 4 );
-                        g_oi.rpc = read_imgword( g_oi.rpc + ival + ( g_oi.image_width * get_reg_from_op( op ) ) );
+                        val = get_reg_from_op( op );
+                        g_oi.rpc = read_imgword( g_oi.rpc + ival + ( IMAGE_WIDTH * val ) );
                         continue;
                     }
                     default: /* case 2: */ /* callnf address */
                     {
                         push( g_oi.rpc + 4 );
-                        g_oi.rpc = g_oi.rpc + ival + ( g_oi.image_width * get_reg_from_op( op ) );
+                        g_oi.rpc = g_oi.rpc + ival + ( IMAGE_WIDTH * get_reg_from_op( op ) );
                         continue;
                     }
                 }
