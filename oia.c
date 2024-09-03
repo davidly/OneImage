@@ -56,7 +56,7 @@ enum TokenTypes
     T_CMPST, T_PUSH, T_POP, T_PUSHTWO, T_POPTWO, T_PUSHF, T_STST, T_ZERO, T_SYSCALL, T_MODDIV,
     T_RZERO, T_RPC, T_RSP, T_RFRAME, T_RARG1, T_RARG2, T_RRES, T_RTMP,
     T_GT, T_LT, T_EQ, T_NE, T_GE, T_LE, T_EVEN, T_ODD,
-    T_MOV, T_CMOV, T_RET, T_RETZERO, T_RETNF, T_RETZERONF, T_INV,
+    T_MOV, T_CMOV, T_RET, T_RET0, T_RETNF, T_RET0NF, T_INV,
     T_CSTF, T_MATHST, T_MATH, T_PLUS, T_IMGWID, T_ADDIMGW, T_SUBIMGW, T_ADDNATW, T_SUBNATW, T_NATWID,
     T_SIGNEXB, T_SIGNEXW, T_SIGNEXDW, T_SWAP,
     T_CPUINFO, T_CALLNF, T_CALL
@@ -74,7 +74,7 @@ static const char * TokenSet[] =
     "CMPST", "PUSH", "POP", "PUSHTWO", "POPTWO", "PUSHF", "STST", "ZERO", "SYSCALL", "MODDIV",
     "RZERO", "RPC", "RSP", "RFRAME", "RARG1", "RARG2", "RRES", "RTMP",
     "GT", "LT", "EQ", "NE", "GE", "LE", "EVEN", "ODD",
-    "MOV", "CMOV", "RET", "RETZERO", "RETNF", "RETZERONF", "INV",
+    "MOV", "CMOV", "RET", "RET0", "RETNF", "RET0NF", "INV",
     "CSTF", "MATHST", "MATH", "+", "IMGWID", "ADDIMGW", "SUBIMGW", "ADDNATW", "SUBNATW", "NATWID",
     "SIGNEXB", "SIGNEXW", "SIGNEXDW", "SWAP",
     "CPUINFO", "CALLNF", "CALL"
@@ -540,7 +540,7 @@ int cdecl main( int argc, char * argv[] )
     FILE * fp;
     char * p, * input;
     const char * pc;
-    size_t l, t, t1, t2, t3, t4;
+    size_t l, t, t1, t2, t3, t4, t5;
     uint16_t u16val;
     int16_t i16val, result, offset;
     width_t len, x, size, val, j;
@@ -1086,7 +1086,7 @@ int cdecl main( int argc, char * argv[] )
                 code[ code_so_far++ ] = compose_op( 6, 0, 0 );
                 break;
             }
-            case T_RETZERO:
+            case T_RET0:
             {
                 code[ code_so_far++ ] = compose_op( 0, 2, 0 );
                 break;
@@ -1096,7 +1096,7 @@ int cdecl main( int argc, char * argv[] )
                 code[ code_so_far++ ] = 0x68;
                 break;
             }
-            case T_RETZERONF:
+            case T_RET0NF:
             {
                 code[ code_so_far++ ] = 0x48;
                 break;
@@ -1751,9 +1751,9 @@ int cdecl main( int argc, char * argv[] )
                 t3 = find_token( tokens[ 3 ] );
                 if ( !is_relation_token( t3 ) )
                     show_error( "relation expected as third argument" );
-                t4 = find_token( tokens[ 4] );
-                if ( T_INVALID != t4 )
-                    show_error( "label expected as fourth argument" );
+                t4 = find_token( tokens[ 4 ] );
+                if ( T_INVALID != t4 && T_RET != t4 && T_RET0 != t4 && T_RETNF != t4 && T_RET0NF != t4 )
+                    show_error( "label or return expected as fourth argument" );
 
                 code[ code_so_far++ ] = compose_op( 0, reg_from_token( t1 ), 3 );
                 code[ code_so_far++ ] = compose_op( relation_from_token( t3 ), reg_from_token( t2 ), 0 );
@@ -1776,9 +1776,9 @@ int cdecl main( int argc, char * argv[] )
                 t3 = find_token( tokens[ 3 ] );
                 if ( !is_relation_token( t3 ) )
                     show_error( "relation expected as third argument" );
-                t4 = find_token( tokens[ 4] );
-                if ( T_INVALID != t4 )
-                    show_error( "label expected as fourth argument" );
+                t4 = find_token( tokens[ 4 ] );
+                if ( T_INVALID != t4 && T_RET != t4 && T_RET0 != t4 && T_RETNF != t4 && T_RET0NF != t4 )
+                    show_error( "label or return expected as fourth argument" );
 
                 code[ code_so_far++ ] = compose_op( 0, reg_from_token( t1 ), 3 );
                 code[ code_so_far++ ] = compose_op( relation_from_token( t3 ), (uint16_t) ( arg - 1 ), 1 );
@@ -2295,26 +2295,46 @@ int cdecl main( int argc, char * argv[] )
             case T_JI:
             {
                 if ( 5 != token_count )
-                    show_error( "j and ji take two arguments" );
-
-                plabel = find_label( tokens[ 4 ] );
-                val = plabel->offset;
+                    show_error( "j and ji take four arguments" );
 
                 code_so_far += 2;
                 word_zero_check( code_so_far );
-                diff = (iwidth_t) val - (iwidth_t) ( code_so_far - 2 );
-                check_if_in_i16_range( (iwidth_t) diff );
+
+                t4 = find_token( tokens[ 4 ] );
+                if ( T_RET == t4 )
+                    diff = 0;
+                else if ( T_RETNF == t4 )
+                    diff = 1;
+                else if ( T_RET0 == t4 )
+                    diff = 2;
+                else if ( T_RET0NF == t4 )
+                    diff = 3;
+                else
+                {
+                    plabel = find_label( tokens[ 4 ] );
+                    val = plabel->offset;
+
+                    diff = (iwidth_t) val - (iwidth_t) ( code_so_far - 2 );
+                    check_if_in_i16_range( (iwidth_t) diff );
+                }
+
                 initialize_word_value( & code_so_far, diff );
                 break;
             }
             case T_JRELB:
             {
-                if ( !strcmp( tokens[ 5 ], "ret" ) )
+                t5 = find_token( tokens[ 5 ] );
+
+                if ( T_RET == t5 )
                     code_so_far += ( 2 + g_image_width );
                 else
                 {
-                    if ( !strcmp( tokens[ 5 ], "retnf" ) )
+                    if ( T_RETNF == t5 )
                         diff = 1;
+                    else if ( T_RET0 == t5 )
+                        diff = 2;
+                    else if ( T_RET0NF == t5 )
+                        diff = 3;
                     else
                     {
                         plabel = find_label( tokens[ 5 ] );
@@ -2326,7 +2346,7 @@ int cdecl main( int argc, char * argv[] )
                             diff = code_so_far - val;
         
                         if ( diff > 127 || diff < -128 )
-                            show_error( "jrel jump offset must be -128..127" );
+                            show_error( "jrelb jump offset must be -128..127" );
                     }
     
                     code_so_far += 3;
@@ -2521,9 +2541,9 @@ int cdecl main( int argc, char * argv[] )
             case T_IDIVST:
             case T_ADDST:
             case T_ZERO:
-            case T_RETZERO:
+            case T_RET0:
             case T_RETNF:
-            case T_RETZERONF:
+            case T_RET0NF:
             case T_PUSH:
             case T_POP:
             case T_SHL:

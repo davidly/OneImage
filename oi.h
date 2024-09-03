@@ -70,6 +70,7 @@
         uint16_t a_rtmp;
         uint8_t image_width; /* 2, 4, or 8 */
         uint8_t image_shift; /* 1, 2, or 3 */
+        uint8_t three_byte_len; /* 1 + image_width */
     };
 
 #else /* OI2 */
@@ -95,6 +96,7 @@
         oi_t address_mask; /* generally used to mask addresses when image width < native width */
         uint8_t image_width; /* 2, 4, or 8 */
         uint8_t image_shift; /* 1, 2, or 3 */
+        uint8_t three_byte_len; /* 1 + image_width */
     };
 
 #endif /* OI2 */

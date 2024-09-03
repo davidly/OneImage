@@ -67,9 +67,11 @@
                                        jrel r0left, r1rightADDRESS, offset (from r1right), RELATION (-128..127 pc offset)
                                            for jrel, the address offset is unsigned. the pc offset is signed.
                                            jrelb checks byte values. jrel checks native width values
-                                           pc offset special cases:
-                                               0: ret
-                                               1: retnf
+                                       pc offset special cases:
+                                           0: ret
+                                           1: retnf
+                                           2: ret0
+                                           3: ret0nf
                 1:  stinc / stincb:    [ r0off ] = value; inc r0off per width
                 2:  ldinc / ldincb:    r0dst = address[ r1off ]. inc r1off per width.
                     exceptions:          overridden
@@ -141,11 +143,11 @@
         1 byte operations: high 3 bits 0..7 operate on reg0:   inc, dec, push, pop, zero, shl, shr, inv
               exceptions:      overridden
               00 halt       -- inc rzero
-              08 retzero    -- inc rsp
+              08 ret0       -- inc rsp
               20 imulst     -- dec rzero
               28 shlimg     -- dec rsp. shift rres left based on image width 2=>1, 4=>2, 8=>3
               40 push rzero -- DON'T OVERRIDE (idivst)
-              48 retzeronf  -- push rsp (nf = no rframe restoration)
+              48 ret0nf     -- push rsp (nf = no rframe restoration)
               60 pop rzero  -- DON'T OVERRIDE
               68 retnf      -- pop rsp (nf = no rframe restoration)
               80 subst      -- zero rzero
@@ -393,6 +395,7 @@ void ResetOI( oi_t memSize, oi_t pc, oi_t sp, uint8_t imageWidth )
     g_oi.rpc = pc;
     g_oi.rsp = sp;
     g_oi.image_width = imageWidth; /* 8, 4, or 2. byte length of addresses, operands, etc. for the executable file */
+    g_oi.three_byte_len = (uint8_t) 1 + imageWidth;
 
     if ( 2 == imageWidth )
     {
@@ -838,6 +841,20 @@ void cstf_do( opcode_t op )
 } /* cstf_do */
 
 #ifdef OLDCPU
+static void jump_return( ival ) ioi_t ival;
+#else
+static void jump_return( ioi_t ival )
+#endif
+{
+    /* jump relative <= 3 means return: 0=ret, 1=retnf, 2=ret0, 3=ret0nf */
+    pop( g_oi.rpc );
+    if ( (ioi_t) 0 == ( ival & 1 ) )
+        pop( g_oi.rframe );
+    if ( ival >= (ioi_t) 2 )
+        g_oi.rres = 0;
+} /* jump_return */
+
+#ifdef OLDCPU
 static bool jrelb_do( op, op1 ) opcode_t op, op1;
 #else
 static bool jrelb_do( opcode_t op, opcode_t op1 )
@@ -847,12 +864,8 @@ static bool jrelb_do( opcode_t op, opcode_t op1 )
     if ( CheckRelation( get_reg_from_op( op ), get_byte( get_reg_from_op( op1 ) + get_byte( g_oi.rpc + 2 ) ), funct_from_op( op1 ) ) )
     {
         ival = (ioi_t) (int8_t) get_byte( g_oi.rpc + 3 );
-        if ( ival <= (ioi_t) 1 ) /* jump relative <= 1 means return. 1=nf */
-        {
-            pop( g_oi.rpc );
-            if ( (ioi_t) 0 == ival )
-                pop( g_oi.rframe );
-        }
+        if ( (oi_t) ival <= (oi_t) 3 )
+            jump_return( ival );
         else
             g_oi.rpc += ival;
         return true;
@@ -870,12 +883,8 @@ static bool jrel_do( opcode_t op, opcode_t op1 )
     if ( CheckRelation( get_reg_from_op( op ), read_imgword( get_reg_from_op( op1 ) + get_byte( g_oi.rpc + 2 ) ), funct_from_op( op1 ) ) )
     {
         ival = (ioi_t) (int8_t) get_byte( g_oi.rpc + 3 );
-        if ( ival <= (ioi_t) 1 ) /* jump relative <= 1 means return. 1=nf */
-        {
-            pop( g_oi.rpc );
-            if ( (ioi_t) 0 == ival )
-                pop( g_oi.rframe );
-        }
+        if ( (oi_t) ival <= (oi_t) 3 )
+            jump_return( ival );
         else
             g_oi.rpc += ival;
         return true;
@@ -1098,6 +1107,33 @@ __forceinline static bool op_80_90_do( opcode_t op )
     return false;
 } /* op_80_90_do */
 
+#ifdef OLDCPU
+static void ldinc_do( op ) opcode_t op;
+#else
+static void ldinc_do( opcode_t op )
+#endif
+{
+    uint8_t op1, width;
+    oi_t val;
+
+    op1 = get_op1();
+    val = get_reg_from_op( op1 ) + g_oi.rpc + (ioi_t) (int16_t) get_word( g_oi.rpc + 2 );
+    width = (uint8_t) width_from_op( op1 );
+    if ( 0 == width )
+        set_reg_from_op( op, get_byte( val ) );
+    else if_1_is_width
+        set_reg_from_op( op, get_word( val ) );
+#ifndef OI2
+    else if_2_is_width
+        set_reg_from_op( op, get_dword( val ) );
+#ifdef OI8
+    else /* 3 == width */
+        set_reg_from_op( op, get_qword( val ) );
+#endif /* OI8 */
+#endif /* OI2 */
+    val = (oi_t) ( 1 << width );
+    add_reg_from_op( op1, val );
+} /* ldinc_do */
 uint32_t ExecuteOI()
 {
 #ifndef OI2
@@ -1132,7 +1168,7 @@ uint32_t ExecuteOI()
                 inc_reg_from_op( op );
                 break;
             }
-            case 0x08: /* retzero: move 0 to rres and return */
+            case 0x08: /* ret0: move 0 to rres and return */
             {
                 g_oi.rres = 0;
                 pop( g_oi.rpc );
@@ -1160,7 +1196,7 @@ uint32_t ExecuteOI()
                 push( get_reg_from_op( op ) );
                 break;
             }
-            case 0x48: /* retzeronf */
+            case 0x48: /* ret0nf */
             {
                 g_oi.rres = 0;
                 pop( g_oi.rpc );
@@ -1331,20 +1367,28 @@ uint32_t ExecuteOI()
                 op1 = get_op1();
                 switch( width_from_op( op1 ) )
                 {
-                    case 0: /* j rleft, rright, relation, address. always native bit width */
+                    case 0: /* j rleft, rright, relation, offset. */
                     {
                         if ( CheckRelation( get_reg_from_op( op ), get_reg_from_op( op1 ), funct_from_op( op1 ) ) )
                         {
-                            g_oi.rpc += (int16_t) get_word( g_oi.rpc + 2 );
+                            ival = (int16_t) get_word( g_oi.rpc + 2 );
+                            if ( (oi_t) ival <= (oi_t) 3 )
+                                jump_return( ival );
+                            else
+                                g_oi.rpc += ival;
                             continue;
                         }
                         break;
                     }
-                    case 1: /* ji rleft, rrightCONSTANT, relation, address. always native bit width. address extended to native width */
+                    case 1: /* ji rleft, rrightCONSTANT, relation, offset. always native bit width. address extended to native width */
                     {
                         if ( CheckRelation( get_reg_from_op( op ), 1 + reg_from_op( op1 ), funct_from_op( op1 ) ) )
                         {
-                            g_oi.rpc += (int16_t) get_word( g_oi.rpc + 2 );
+                            ival = (int16_t) get_word( g_oi.rpc + 2 );
+                            if ( (oi_t) ival <= (oi_t) 3 )
+                                jump_return( ival );
+                            else
+                                g_oi.rpc += ival;
                             continue;
                         }
                         break;
@@ -1373,23 +1417,7 @@ uint32_t ExecuteOI()
             case 0x47: case 0x4b: case 0x4f: /* ldinc reg0dst reg1offinc pc-relative-offset */
             case 0x53: case 0x57: case 0x5b: case 0x5f:
             {
-                op1 = get_op1();
-                val = get_reg_from_op( op1 ) + g_oi.rpc + (ioi_t) (int16_t) get_word( g_oi.rpc + 2 );
-                width = width_from_op( op1 );
-                if ( 0 == width )
-                    set_reg_from_op( op, get_byte( val ) );
-                else if_1_is_width
-                    set_reg_from_op( op, get_word( val ) );
-#ifndef OI2
-                else if_2_is_width
-                    set_reg_from_op( op, get_dword( val ) );
-#ifdef OI8
-                else /* 3 == width */
-                    set_reg_from_op( op, get_qword( val ) );
-#endif /* OI8 */
-#endif /* OI2 */
-                val = (oi_t) ( 1 << width );
-                add_reg_from_op( op1, val );
+                ldinc_do( op );
                 break;
             }
             case 0x63: case 0x67: case 0x6b: case 0x6f: /* call through function pointer table and callnf variants */
@@ -1664,7 +1692,7 @@ uint32_t ExecuteOI()
 #else
         byte_len = 1 + byte_len_from_op( op );
         if ( 3 == byte_len )
-            byte_len = 1 + g_oi.image_width;
+            byte_len = g_oi.three_byte_len;
         g_oi.rpc += (oi_t) byte_len;
 #endif /* OI2 */
 

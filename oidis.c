@@ -181,6 +181,43 @@ static const char * relative_value( uint8_t * pop, oi_t rpc, uint8_t width )
 } /* relative_value */
 
 #ifdef OLDCPU
+static const char * ReturnString( val ) uint8_t val;
+#else
+static const char * ReturnString( uint8_t val )
+#endif
+{
+    if ( 0 == val )
+        return "";
+    if ( 1 == val )
+        return "nf";
+    if ( 2 == val )
+        return "0";
+    if ( 3 == val )
+        return "0nf";
+    return "UNKNOWN";
+} /* ReturnString */
+
+#ifdef OLDCPU
+static const char * relative_jump( pop, rpc, val, width ) uint8_t * pop; oi_t rpc, uint8_t width;
+#else
+static const char * relative_jump( uint8_t * pop, oi_t rpc, uint8_t width )
+#endif
+{
+    int16_t offset;
+    static char ac[ 20 ];
+    ac[ 0 ] = 0;
+
+    offset = (int16_t) getword( pop + 2 );
+    if ( (oi_t) offset <= (oi_t) 3 )
+    {
+        sprintf( ac, "ret%s", ReturnString( (uint8_t) offset ) );
+        return ac;
+    }
+
+    return relative_value( pop, rpc, width );
+} /* relative_jump */
+
+#ifdef OLDCPU
 const char * DisassembleOI( pop, rpc, image_width ) uint8_t * pop; oi_t rpc, uint8_t image_width;
 #else
 const char * DisassembleOI( uint8_t * pop, oi_t rpc, uint8_t image_width )
@@ -203,14 +240,14 @@ const char * DisassembleOI( uint8_t * pop, oi_t rpc, uint8_t image_width )
         case 0x00: { strcpy( buf, "halt" ); break; }
         case 0x04: case 0x0c: case 0x10: case 0x14: case 0x18: case 0x1c:
             { sprintf( buf, "inc %s", RegOpString( op ) ); break; }
-        case 0x08: { strcpy( buf, "retzero" ); break; }
+        case 0x08: { strcpy( buf, "ret0" ); break; }
         case 0x20: { strcpy( buf, "imulst" ); break; }
         case 0x24: case 0x2c: case 0x30: case 0x34: case 0x38: case 0x3c:
             { sprintf( buf, "dec %s", RegOpString( op ) ); break; }
         case 0x28: { strcpy( buf, "shlimg" ); break; }
         case 0x40: case 0x44: case 0x4c: case 0x50: case 0x54: case 0x58: case 0x5c:
             { sprintf( buf, "push %s", RegOpString( op ) ); break; }
-        case 0x48: { strcpy( buf, "retzeronf" ); break; }
+        case 0x48: { strcpy( buf, "ret0nf" ); break; }
         case 0x60: case 0x64: case 0x6c: case 0x70: case 0x74: case 0x78: case 0x7c:
             { sprintf( buf, "pop %s", RegOpString( op ) ); break; }
         case 0x68: { strcpy( buf, "retnf" ); break; }
@@ -381,19 +418,22 @@ const char * DisassembleOI( uint8_t * pop, oi_t rpc, uint8_t image_width )
                                  RelationString( op1funct ), relative_value( pop, rpc, image_width ) );
                     else if ( 2 == low2 ) /* jrel r0left, r1rightADDRESS, offset (from r1right), RELATION (-128..127 pc offset) */
                     {
-                        if ( 0 == op3 )
-                            sprintf( buf, "jrelb %s, %s, %u, %s, return", RegOpString( op ), RegOpString( op1 ),
-                                     op2, RelationString( op1funct ) );
-                        else if ( 1 == op3 )
-                            sprintf( buf, "jrelb %s, %s, %u, %s, returnnf", RegOpString( op ), RegOpString( op1 ),
-                                     op2, RelationString( op1funct ) );
+                        if ( op3 <= 3 )
+                            sprintf( buf, "jrelb %s, %s, %u, %s, ret%s", RegOpString( op ), RegOpString( op1 ),
+                                     op2, RelationString( op1funct ), ReturnString( op3 ) );
                         else
                             sprintf( buf, "jrelb %s, %s, %u, %s, %d", RegOpString( op ), RegOpString( op1 ),
                                      op2, RelationString( op1funct ), op3 );
                     }
                     else if ( 3 == low2 ) /* jrel r0left, r1rightADDRESS, offset (from r1right), RELATION (-128..127 pc offset) */
-                        sprintf( buf, "jrel %s, %s, %u, %s, %d", RegOpString( op ), RegOpString( op1 ),
-                                 op2, RelationString( op1funct ), op3 );
+                    {
+                        if ( op3 <= 3 )
+                            sprintf( buf, "jrel %s, %s, %u, %s, ret%s", RegOpString( op ), RegOpString( op1 ),
+                                     op2, RelationString( op1funct ), ReturnString( op3 ) );
+                        else
+                            sprintf( buf, "jrel %s, %s, %u, %s, %d", RegOpString( op ), RegOpString( op1 ),
+                                     op2, RelationString( op1funct ), op3 );
+                    }
                 }
                 else if ( 1 == opfunct ) /* stinc */
                 {

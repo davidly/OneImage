@@ -153,7 +153,7 @@ minmax_max:
     inc     [move_count]
     ji      rarg2, 4, lt, _max_after_winner_check
 
-    ldib    rres, o_piece
+    ; rres already has o_piece
     ldi     rarg1, board
     callnf  procs[ rtmp ]
 
@@ -164,6 +164,7 @@ minmax_max:
   _max_after_winner_check:
     inc     rarg2                           ; move to the next depth
     ldib    rarg1, min_score                ; initialize value to find maximum
+    push    rtmp                            ; save parent's i in for loop
     ldib    rtmp, -1                        ; i in for loop 0..8
 
   _max_loop:
@@ -176,13 +177,11 @@ minmax_max:
     stob    board[ rtmp ], rres
 
     push    rarg1                           ; save value
-    push    rtmp                            ; save for loop 0..8
     pushf   1                               ; push frame argument - alpha
     pushf   0                               ; push frame argument - beta
 
     call    minmax_min                      ; recurse
 
-    pop     rtmp                            ; restore for loop 0..8
     pop     rarg1                           ; restore value
     stob    board[ rtmp ], rzero
 
@@ -203,13 +202,14 @@ minmax_max:
     
   _max_return:
     dec     rarg2                           ; restore depth
+    pop     rtmp                                                                          ; restore parent's i in for loop
     ret     2                               ; toss alpha and beta from the stack
 
 minmax_min:
     inc     [move_count]
     ji      rarg2, 4, lt, _min_after_winner_check
 
-    ldib    rres, x_piece
+    ; rres already has x_piece
     ldi     rarg1, board
     callnf  procs[ rtmp ]
 
@@ -225,6 +225,7 @@ minmax_min:
   _min_after_winner_check:
     inc     rarg2                           ; move to the next depth
     ldib    rarg1, max_score
+    push    rtmp                            ; save parent's i in for loop
     ldib    rtmp, -1                        ; i in for loop 0..8
 
   _min_loop:
@@ -237,13 +238,11 @@ minmax_min:
     stob    board[ rtmp ], rres
 
     push    rarg1                           ; save value
-    push    rtmp                            ; save for loop 0..8
     pushf   1                               ; push frame argument - alpha
     pushf   0                               ; push frame argument - beta
 
     call    minmax_max                      ; recurse
 
-    pop     rtmp                            ; restore for loop 0..8
     pop     rarg1                           ; restore value
     stob    board[ rtmp ], rzero
 
@@ -264,6 +263,7 @@ minmax_min:
     
   _min_return:
     dec     rarg2                           ; restore depth
+    pop     rtmp                                                                          ; restore parent's i in for loop
     ret     2                               ; toss alpha and beta from the stack
 
 proc0:
@@ -275,22 +275,18 @@ proc0:
     jrelb   rres, rarg1, 6, eq, retnf
 
  _proc0_next_win2:
-    jrelb   rres, rarg1, 4, ne, _proc0_no
+    jrelb   rres, rarg1, 4, ne, ret0nf
     jrelb   rres, rarg1, 8, eq, retnf
-
- _proc0_no:
-    retzeronf
+    ret0nf
 
 proc1:
     jrelb   rres, rarg1, 0, ne, _proc1_next_win
     jrelb   rres, rarg1, 2, eq, retnf
 
   _proc1_next_win:
-    jrelb   rres, rarg1, 4, ne, _proc1_no
+    jrelb   rres, rarg1, 4, ne, ret0nf
     jrelb   rres, rarg1, 7, eq, retnf
-
- _proc1_no:
-    retzeronf
+    ret0nf
 
 proc2:
     jrelb   rres, rarg1, 0, ne, _proc2_next_win
@@ -301,22 +297,18 @@ proc2:
     jrelb   rres, rarg1, 8, eq, retnf
 
  _proc2_next_win2:
-    jrelb   rres, rarg1, 4, ne, _proc2_no
+    jrelb   rres, rarg1, 4, ne, ret0nf
     jrelb   rres, rarg1, 6, eq, retnf
-
- _proc2_no:
-    retzeronf
+    ret0nf
 
 proc3:
     jrelb   rres, rarg1, 0, ne, _proc3_next_win
     jrelb   rres, rarg1, 6, eq, retnf
 
   _proc3_next_win:
-    jrelb   rres, rarg1, 4, ne, _proc3_no
+    jrelb   rres, rarg1, 4, ne, ret0nf
     jrelb   rres, rarg1, 5, eq, retnf
-
- _proc3_no:
-    retzeronf
+    ret0nf
 
 proc4:
     jrelb   rres, rarg1, 0, ne, _proc4_next_win
@@ -331,22 +323,18 @@ proc4:
     jrelb   rres, rarg1, 7, eq, retnf
 
  _proc4_next_win3:
-    jrelb   rres, rarg1, 3, ne, _proc4_no
+    jrelb   rres, rarg1, 3, ne, ret0nf
     jrelb   rres, rarg1, 5, eq, retnf
-
- _proc4_no:
-    retzeronf
+    ret0nf
 
 proc5:
     jrelb   rres, rarg1, 3, ne, _proc5_next_win
     jrelb   rres, rarg1, 4, eq, retnf
 
   _proc5_next_win:
-    jrelb   rres, rarg1, 2, ne, _proc5_no
+    jrelb   rres, rarg1, 2, ne, ret0nf
     jrelb   rres, rarg1, 8, eq, retnf
-
- _proc5_no:
-    retzeronf
+    ret0nf
 
 proc6:
     jrelb   rres, rarg1, 2, ne, _proc6_next_win
@@ -357,22 +345,18 @@ proc6:
     jrelb   rres, rarg1, 3, eq, retnf
 
  _proc6_next_win2:
-    jrelb   rres, rarg1, 7, ne, _proc6_no
+    jrelb   rres, rarg1, 7, ne, ret0nf
     jrelb   rres, rarg1, 8, eq, retnf
-
- _proc6_no:
-    retzeronf
+    ret0nf
 
 proc7:
     jrelb   rres, rarg1, 1, ne, _proc7_next_win
     jrelb   rres, rarg1, 4, eq, retnf
 
   _proc7_next_win:
-    jrelb   rres, rarg1, 6, ne, _proc7_no
+    jrelb   rres, rarg1, 6, ne, ret0nf
     jrelb   rres, rarg1, 8, eq, retnf
-
- _proc7_no:
-    retzeronf
+    ret0nf
 
 proc8:
     jrelb   rres, rarg1, 0, ne, _proc8_next_win
@@ -383,11 +367,9 @@ proc8:
     jrelb   rres, rarg1, 5, eq, retnf
 
  _proc8_next_win2:
-    jrelb   rres, rarg1, 6, ne, _proc8_no
+    jrelb   rres, rarg1, 6, ne, ret0nf
     jrelb   rres, rarg1, 7, eq, retnf
-
- _proc8_no:
-    retzeronf
+    ret0nf
 
 .codeend
 
