@@ -176,6 +176,8 @@ minmax_max:
     ldib    rres, x_piece
     stob    board[ rtmp ], rres
 
+    ; alternatively inlining tail recursion here has little measurable savings: about 1.7%
+
     push    rarg1                           ; save value
     pushf   1                               ; push frame argument - alpha
     pushf   0                               ; push frame argument - beta
@@ -183,7 +185,7 @@ minmax_max:
     call    minmax_min                      ; recurse
 
     pop     rarg1                           ; restore value
-    stob    board[ rtmp ], rzero
+    stob    board[ rtmp ], rzero            ; restore the board position to 0
 
     ji      rres, win_score, eq, _max_return ; can't do better than winning
     j       rres, rarg1, le, _max_loop      ; if score not a new high then loop
@@ -202,7 +204,7 @@ minmax_max:
     
   _max_return:
     dec     rarg2                           ; restore depth
-    pop     rtmp                                                                          ; restore parent's i in for loop
+    pop     rtmp                            ; restore parent's i in for loop
     ret     2                               ; toss alpha and beta from the stack
 
 minmax_min:
@@ -244,7 +246,7 @@ minmax_min:
     call    minmax_max                      ; recurse
 
     pop     rarg1                           ; restore value
-    stob    board[ rtmp ], rzero
+    stob    board[ rtmp ], rzero            ; restore the board position to 0
 
     ji      rres, lose_score, eq, _min_return ; can't do better than losing
     j       rres, rarg1, ge, _min_loop      ; if score not a new low then loop
@@ -263,7 +265,7 @@ minmax_min:
     
   _min_return:
     dec     rarg2                           ; restore depth
-    pop     rtmp                                                                          ; restore parent's i in for loop
+    pop     rtmp                            ; restore parent's i in for loop
     ret     2                               ; toss alpha and beta from the stack
 
 proc0:
@@ -276,8 +278,8 @@ proc0:
 
  _proc0_next_win2:
     jrelb   rres, rarg1, 4, ne, ret0nf
-    jrelb   rres, rarg1, 8, eq, retnf
-    ret0nf
+    jrelb   rres, rarg1, 8, ne, ret0nf
+    retnf
 
 proc1:
     jrelb   rres, rarg1, 0, ne, _proc1_next_win
@@ -285,8 +287,8 @@ proc1:
 
   _proc1_next_win:
     jrelb   rres, rarg1, 4, ne, ret0nf
-    jrelb   rres, rarg1, 7, eq, retnf
-    ret0nf
+    jrelb   rres, rarg1, 7, ne, ret0nf
+    retnf
 
 proc2:
     jrelb   rres, rarg1, 0, ne, _proc2_next_win
@@ -298,8 +300,8 @@ proc2:
 
  _proc2_next_win2:
     jrelb   rres, rarg1, 4, ne, ret0nf
-    jrelb   rres, rarg1, 6, eq, retnf
-    ret0nf
+    jrelb   rres, rarg1, 6, ne, ret0nf
+    retnf
 
 proc3:
     jrelb   rres, rarg1, 0, ne, _proc3_next_win
@@ -307,8 +309,8 @@ proc3:
 
   _proc3_next_win:
     jrelb   rres, rarg1, 4, ne, ret0nf
-    jrelb   rres, rarg1, 5, eq, retnf
-    ret0nf
+    jrelb   rres, rarg1, 5, ne, ret0nf
+    retnf
 
 proc4:
     jrelb   rres, rarg1, 0, ne, _proc4_next_win
@@ -324,8 +326,8 @@ proc4:
 
  _proc4_next_win3:
     jrelb   rres, rarg1, 3, ne, ret0nf
-    jrelb   rres, rarg1, 5, eq, retnf
-    ret0nf
+    jrelb   rres, rarg1, 5, ne, ret0nf
+    retnf
 
 proc5:
     jrelb   rres, rarg1, 3, ne, _proc5_next_win
@@ -333,8 +335,8 @@ proc5:
 
   _proc5_next_win:
     jrelb   rres, rarg1, 2, ne, ret0nf
-    jrelb   rres, rarg1, 8, eq, retnf
-    ret0nf
+    jrelb   rres, rarg1, 8, ne, ret0nf
+    retnf
 
 proc6:
     jrelb   rres, rarg1, 2, ne, _proc6_next_win
@@ -346,8 +348,8 @@ proc6:
 
  _proc6_next_win2:
     jrelb   rres, rarg1, 7, ne, ret0nf
-    jrelb   rres, rarg1, 8, eq, retnf
-    ret0nf
+    jrelb   rres, rarg1, 8, ne, ret0nf
+    retnf
 
 proc7:
     jrelb   rres, rarg1, 1, ne, _proc7_next_win
@@ -355,8 +357,8 @@ proc7:
 
   _proc7_next_win:
     jrelb   rres, rarg1, 6, ne, ret0nf
-    jrelb   rres, rarg1, 8, eq, retnf
-    ret0nf
+    jrelb   rres, rarg1, 8, ne, ret0nf
+    retnf
 
 proc8:
     jrelb   rres, rarg1, 0, ne, _proc8_next_win
@@ -368,8 +370,8 @@ proc8:
 
  _proc8_next_win2:
     jrelb   rres, rarg1, 6, ne, ret0nf
-    jrelb   rres, rarg1, 7, eq, retnf
-    ret0nf
+    jrelb   rres, rarg1, 7, ne, ret0nf
+    retnf
 
 .codeend
 

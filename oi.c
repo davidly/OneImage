@@ -10,9 +10,10 @@
         -- introducing new instructions that are simple yet helpful for typical apps
 
     Native Width: number of bytes for registers, pointers, etc. 16, 32, or 64. Build with defines OI2, OI4, or OI8
+        This is the width in hardware or in an emulator.
 
     Image Width: number of bytes for registers, pointers, etc. in the .oi executable image.
-    16, 32, or 64 as set in the flags field of the image header.
+        16, 32, or 64 as set in the flags field of the image header.
 
     For now, Native Width must be the same as Image Width. To do: enable NW >= IW.
 
@@ -45,7 +46,7 @@
 
     Operation: Another name for Function when it's not Math or Relation
 
-    Width
+    Instruction value Width: This can be <= image width, which can be <= native width.
         2 lower bits 1..0 of byte 1 of 2 and 4 byte operations. 0 = byte, 1 = word, 2 = dword, 3 = qword
         when width doesn't apply to an instruction, this field can instead differentiate between instructions
 
@@ -117,7 +118,7 @@
                    - 3 funct: ldib x    -- load immediate small signed values
                    - 4 funct: signex    -- sign extend the specified width to the native width
                    - 5 funct: memf. rarg1 = address, rarg2 = # of items to copy. rtmp = value to copy. -- memfill
-                   - 6 funct: stadd. stb [rtmp+rarg1] = 0. add rtmp, rarg2. loop if rtmp le rarg1 -- store and add in a loop
+                   - 6 funct: stadd. stb [rtmp+rarg1] = 0. add rtmp, rarg2. loop if rtmp le rarg1 -- store and add in a loop. rtmp is undefined after execution
                    - 7 funct: moddiv. r0 = r0 % r1. push( r0 / r1 ). -- calculate both mod and div
                 4:
                    - 0 funct: syscall ( ( reg of byte 0 << 3 ) | ( reg of byte 1 ) ). 6 bit system ID. bit width must be 0.
@@ -163,14 +164,35 @@
               e4 UNUSED     -- inv rpc
               e8 UNUSED     -- inv rsp
 
-    Note: there are extra, unnecessary casts to appease older compilers. Also, no #elif or defined() exists on older compilers.
+    Note on coding conventions and engineering decisions:
+      -- this is in C, not C++ so compilers work, including Aztec C  from 1984 for 8080 CP/M 2.2.
+      -- there are extra, unnecessary casts to appease older compilers.
+      -- no #elif or defined() exists on older compilers.
+      -- older compilers require #ifdef and #define statements to start in the first column
+      -- older compilers require variable declarations prior to any other type of statement in a function
+      -- older compilers don't support initializing variables when they are declared
+      -- in some cases assignments to variables are made to reduce later expression complexity so older compilers work
+      -- generally variables aren't used to reduce expression complexity because older compilers generate much
+         slower code to save and load variables. This means code is duplicated, but if that bloat can be tolerated
+         then code on old machines runs much faster.
+      -- Aztec C has bugs with some casts, so there are workarounds
+      -- inlining of functions doesn't work on older CP/M and DOS compilers, so:
+              -- Portions that need to be inlined are in #define rather than functions, even though that's bad engineering
+              -- Microsoft C v6 for DOS will only optimize functions smaller than some size, so ExecuteOI() calls helper
+                 functions instead of just putting the code inline. Functions calls are slower, but without optimizations
+                 the emulator runs 2x slower on DOS.
+              -- Modern compilers will inline everything anyway, so there is no performance cost of helper functions
+      -- older compilers require a different function declaration syntax
+      -- stack allocation and alignment is always native width even when running more narrow image width binaries.
+              -- This greatly simplifies both the emulator and any potential physical implementation
+              -- Code that references the stack must be aware of this and use natwid instead of imgwid for offset calculations
 
     Tested compilers:
         - CP/M 2.2 on 8080 and Z80:
-              - HiSoft HI-TECH C v3.09
-              - MANX Aztec C v1.06D
+              - HiSoft HI-TECH C v3.09   ===> this one is more robust and produces faster code
+              - MANX Aztec C v1.06D      ===> this one works OK
         - DOS 3.x on 8086:
-              - Microsoft C v6.00AX
+              - Microsoft C v6.00AX      ===> this one produces the fastest code by far
               - Open Watcom C/C++ x86 16-bit Compile and Link Utility Version 2.0 beta Oct  9 2023 02:19:55 (64-bit)
         - Windows 11 on x64:
               - Microsoft (R) C/C++ Optimizing Compiler Version 19.40.33814 for x64
@@ -186,12 +208,12 @@
               - g++ (Debian 8.3.0)
         - Debian GNU/Linux 12 on Raspberry PI 5 Arm64
               - g++ (Debian 12.2.0-14)
-        - MacOS Sonoma 14.6.1 (23G93) on MacbookAir 3 Arm64
+        - MacOS Sonoma 14.6.1 (23G93) on MacBookAir M3 Arm64
               - Apple clang version 15.0.0 (clang-1500.3.9.4)
 
     Build notes:
         - One of OI2, OI4, or OI8 must be defined when compiling
-        - The resulting oios executable can only run .oi binaries with image-width that matches.
+        - The resulting oios executable can only run .oi binaries with image-width <= native width (OIx)
         - With the 8-bit compilers I can only get OI2 builds to work
         - With the 16-bit compilers only OI2 and OI4 work.
         - With 32-bit and 64-bit compilers all widths work.
@@ -199,10 +221,11 @@
 
 #include <stdio.h>
 
-#ifndef AZTECCPM
+#ifdef AZTECCPM
+#define memset( p, val, len ) setmem( p, len, val )
+#else
 #include <assert.h>
 #include <string.h>
-
 #ifndef MSC6
 #include <stdint.h>
 #endif /* MSC6 */
@@ -210,10 +233,6 @@
 
 #include "oi.h"
 #include "trace.h"
-
-#ifdef AZTECCPM
-#define memset( p, val, len ) setmem( p, len, val )
-#endif
 
 #define true 1
 #define false 0
@@ -251,9 +270,9 @@ void TraceInstructionsOI( bool t )
     typedef uint8_t opcode_t;
 #else
     typedef size_t opcode_t;
-#endif
+#endif /* OLDCPU */
 
-/* these macros lose safety and readability over inlined functions, but for older compilers it's much faster */
+/* these macros lose safety and readability over inlined functions, but older compilers can't inline functions */
 
 #ifdef OI2
 #define access_ram( address ) ( ram[ address ] )
@@ -268,7 +287,7 @@ void TraceInstructionsOI( bool t )
 #define get_byte( address ) ( access_ram( address ) )
 #define set_byte( address, val ) ( access_ram( address ) = val )
 
-#define get_word( address ) ( * (uint16_t *) ( ram_address(address ) ) )
+#define get_word( address ) ( * (uint16_t *) ( ram_address( address ) ) )
 #define set_word( address, val ) ( * (uint16_t *) ( ram_address( address ) ) = val )
 
 #define get_oiword( address ) ( * (oi_t *) ( ram_address( address ) ) )
@@ -470,8 +489,8 @@ static bool CheckRelation( ioi_t l, ioi_t r, uint8_t relation )
         case 3: { return ( l != r ); }
         case 4: { return ( l >= r ); }
         case 5: { return ( l <= r ); }
-        case 6: { return ( (bool) !( l & (ioi_t) 1 ) ); } /* true if left is even. right is ignored */
-        case 7: { return ( (bool) ( l & (ioi_t) 1 ) ); } /* true if left is odd. right is ignored */
+        case 6: { return ( (bool) !( l & (ioi_t) 1 ) ); }
+        case 7: { return ( (bool) ( l & (ioi_t) 1 ) ); }
         default: { __assume( false ); }
     }
 #else /* OI2 */
@@ -485,8 +504,8 @@ static bool CheckRelation( ioi_t l, ioi_t r, uint8_t relation )
             case 3: { return ( (int16_t) l != (int16_t) r ); }
             case 4: { return ( (int16_t) l >= (int16_t) r ); }
             case 5: { return ( (int16_t) l <= (int16_t) r ); }
-            case 6: { return ( (bool) !( l & (ioi_t) 1 ) ); } /* true if left is even. right is ignored */
-            case 7: { return ( (bool) ( l & (ioi_t) 1 ) ); } /* true if left is odd. right is ignored */
+            case 6: { return ( (bool) !( l & (ioi_t) 1 ) ); }
+            case 7: { return ( (bool) ( l & (ioi_t) 1 ) ); }
             default: { __assume( false ); }
         }
     }
@@ -500,8 +519,8 @@ static bool CheckRelation( ioi_t l, ioi_t r, uint8_t relation )
             case 3: { return ( (int32_t) l != (int32_t) r ); }
             case 4: { return ( (int32_t) l >= (int32_t) r ); }
             case 5: { return ( (int32_t) l <= (int32_t) r ); }
-            case 6: { return ( (bool) !( l & (ioi_t) 1 ) ); } /* true if left is even. right is ignored */
-            case 7: { return ( (bool) ( l & (ioi_t) 1 ) ); } /* true if left is odd. right is ignored */
+            case 6: { return ( (bool) !( l & (ioi_t) 1 ) ); }
+            case 7: { return ( (bool) ( l & (ioi_t) 1 ) ); }
             default: { __assume( false ); }
         }
     }
@@ -516,8 +535,8 @@ static bool CheckRelation( ioi_t l, ioi_t r, uint8_t relation )
             case 3: { return ( l != r ); }
             case 4: { return ( l >= r ); }
             case 5: { return ( l <= r ); }
-            case 6: { return ( (bool) !( l & (ioi_t) 1 ) ); } /* true if left is even. right is ignored */
-            case 7: { return ( (bool) ( l & (ioi_t) 1 ) ); } /* true if left is odd. right is ignored */
+            case 6: { return ( (bool) !( l & (ioi_t) 1 ) ); }
+            case 7: { return ( (bool) ( l & (ioi_t) 1 ) ); }
             default: { __assume( false ); }
         }
     }
@@ -656,36 +675,39 @@ static void memfb_do()
 
 static void memfw_do()
 {
-    uint16_t * pw, * pbeyond;
+    uint16_t * pw, * pbeyond, val;
     pw = (uint16_t *) ram_address( g_oi.rarg1 );
     pw += g_oi.rres;
     pbeyond = pw + g_oi.rarg2;
+    val = (uint16_t) g_oi.rtmp;
     while ( pw != pbeyond )
-        *pw++ = (uint16_t) g_oi.rtmp;
+        *pw++ = val;
 } /* memfw_do */
 
 #ifndef OI2
 
 static void memfdw_do()
 {
-    uint32_t * p, * pbeyond;
+    uint32_t * p, * pbeyond, val;
     p = (uint32_t *) ram_address( g_oi.rarg1 );
     p += g_oi.rres;
     pbeyond = p + g_oi.rarg2;
+    val = (uint32_t) g_oi.rtmp;
     while ( p != pbeyond )
-        *p++ = (uint32_t) g_oi.rtmp;
+        *p++ = val;
 } /* memfdw_do */
 
 #ifdef OI8
 
 static void memfqw_do()
 {
-    uint64_t * p, * pbeyond;
+    uint64_t * p, * pbeyond, val;
     p = (uint64_t *) ram_address( g_oi.rarg1 );
     p += g_oi.rres;
     pbeyond = p + g_oi.rarg2;
+    val = g_oi.rtmp;
     while ( p != pbeyond )
-        *p++ = g_oi.rtmp;
+        *p++ = val;
 } /* memfqw_do */
 
 #endif /* OI8 */
@@ -693,10 +715,9 @@ static void memfqw_do()
 
 static void staddb_do()
 {
-    uint8_t * pb, * pend, * pstart;
+    uint8_t * pb, * pend;
     oi_t tadd;
     pb = ram_address( g_oi.rtmp + g_oi.rarg1 );
-    pstart = pb;
     pend = pb + ( g_oi.rres - g_oi.rtmp );
     tadd = g_oi.rarg2;
 
@@ -705,20 +726,20 @@ static void staddb_do()
         *pb = 0;
         pb += tadd;
     } while ( pb <= pend );
-
-    g_oi.rtmp += (oi_t) ( pend - pstart );
 } /* staddb_do */
 
 static void staddw_do()
 {
     uint16_t * pw;
+    oi_t cur;
     pw = (uint16_t *) ram_address( g_oi.rtmp + g_oi.rarg1 );
+    cur = g_oi.rtmp;
     do
     {
         *pw = 0;
         pw += g_oi.rarg2;
-        g_oi.rtmp += g_oi.rarg2;
-    } while ( g_oi.rtmp <= g_oi.rres );
+        cur += g_oi.rarg2;
+    } while ( cur <= g_oi.rres );
 } /* staddw_do */
 
 #ifndef OI2
@@ -726,13 +747,15 @@ static void staddw_do()
 static void stadddw_do()
 {
     uint32_t * pw;
+    oi_t cur;
     pw = (uint32_t *) ram_address( g_oi.rtmp + g_oi.rarg1 );
+    cur = g_oi.rtmp;
     do
     {
         *pw = 0;
         pw += g_oi.rarg2;
-        g_oi.rtmp += g_oi.rarg2;
-    } while ( g_oi.rtmp <= g_oi.rres );
+        cur += g_oi.rarg2;
+    } while ( cur <= g_oi.rres );
 } /* stadddw_do */
 
 #ifdef OI8
@@ -740,13 +763,15 @@ static void stadddw_do()
 static void staddqw_do()
 {
     uint64_t * pw;
+    oi_t cur;
     pw = (uint64_t *) ram_address( g_oi.rtmp + g_oi.rarg1 );
+    cur = g_oi.rtmp;
     do
     {
         *pw = 0;
         pw += g_oi.rarg2;
-        g_oi.rtmp += g_oi.rarg2;
-    } while ( g_oi.rtmp <= g_oi.rres );
+        cur += g_oi.rarg2;
+    } while ( cur <= g_oi.rres );
 } /* staddqw_do */
 
 #endif /* OI8 */
@@ -755,7 +780,7 @@ static void staddqw_do()
 #ifdef OLDCPU
 static void ldo_do( op ) opcode_t op;
 #else
-static void ldo_do( opcode_t op )
+__forceinline static void ldo_do( opcode_t op )
 #endif
 {
     size_t op1;
@@ -768,10 +793,10 @@ static void ldo_do( opcode_t op )
     funct1 = funct_from_op( op1 );
 
     if ( 2 == funct1 )
-        set_reg_from_op( op, (oi_t) ival );
+        set_reg_from_op( op, (oi_t) ival ); /* ldi */
     else /* funct1 is 0 or 1 */
     {
-        if ( 1 == funct1 ) /* pre-increment register for inc variants */
+        if ( 1 == funct1 ) /* pre-increment register for ldoinc variants */
             inc_reg_from_op( op1 );
     
         width = (uint8_t) width_from_op( op1 );
@@ -797,14 +822,14 @@ static void ldo_do( opcode_t op )
 #ifdef OLDCPU
 static void moddiv_do( op, op1 ) size_t op; size_t op1;
 #else
-static void moddiv_do( size_t op, size_t op1 )
+__forceinline static void moddiv_do( size_t op, size_t op1 )
 #endif
 {
     oi_t x, y;
     y = get_reg_from_op( op1 );
     if ( (oi_t) 0 == y )
     {
-        push( 0 );
+        push( 0 ); /* when the exist, an exception should be raised */
         return;
     }
 
@@ -828,7 +853,7 @@ static oi_t frame_offset( ioi_t offset )
 #ifdef OLDCPU
 void cstf_do( op ) opcode_t op;
 #else
-void cstf_do( opcode_t op )
+__forceinline void cstf_do( opcode_t op )
 #endif
 {
     oi_t val;
@@ -843,10 +868,11 @@ void cstf_do( opcode_t op )
 #ifdef OLDCPU
 static void jump_return( ival ) ioi_t ival;
 #else
-static void jump_return( ioi_t ival )
+__forceinline static void jump_return( ioi_t ival )
 #endif
 {
     /* jump relative <= 3 means return: 0=ret, 1=retnf, 2=ret0, 3=ret0nf */
+    assert( ival >= 0 && ival <= 3 );
     pop( g_oi.rpc );
     if ( (ioi_t) 0 == ( ival & 1 ) )
         pop( g_oi.rframe );
@@ -855,28 +881,9 @@ static void jump_return( ioi_t ival )
 } /* jump_return */
 
 #ifdef OLDCPU
-static bool jrelb_do( op, op1 ) opcode_t op, op1;
-#else
-static bool jrelb_do( opcode_t op, opcode_t op1 )
-#endif
-{
-    ioi_t ival;
-    if ( CheckRelation( get_reg_from_op( op ), get_byte( get_reg_from_op( op1 ) + get_byte( g_oi.rpc + 2 ) ), funct_from_op( op1 ) ) )
-    {
-        ival = (ioi_t) (int8_t) get_byte( g_oi.rpc + 3 );
-        if ( (oi_t) ival <= (oi_t) 3 )
-            jump_return( ival );
-        else
-            g_oi.rpc += ival;
-        return true;
-    }
-    return false;
-} /* jrelb_do */
-
-#ifdef OLDCPU
 static bool jrel_do( op, op1 ) opcode_t op, op1;
 #else
-static bool jrel_do( opcode_t op, opcode_t op1 )
+__forceinline static bool jrel_do( opcode_t op, opcode_t op1 )
 #endif
 {
     ioi_t ival;
@@ -895,7 +902,7 @@ static bool jrel_do( opcode_t op, opcode_t op1 )
 #ifdef OLDCPU
 static void stinc_do( op ) opcode_t op;
 #else
-static void stinc_do( opcode_t op )
+__forceinline static void stinc_do( opcode_t op )
 #endif
 {
     uint8_t width;
@@ -924,7 +931,7 @@ static void stinc_do( opcode_t op )
 #ifdef OLDCPU
 static void stinc_reg_do( op ) opcode_t op;
 #else
-static void stinc_reg_do( opcode_t op )
+__forceinline static void stinc_reg_do( opcode_t op )
 #endif
 {
     uint8_t width;
@@ -954,7 +961,7 @@ static void stinc_reg_do( opcode_t op )
 #ifdef OLDCPU
 static void op_a0_b0_do( op ) opcode_t op;
 #else
-static void op_a0_b0_do( opcode_t op )
+__forceinline static void op_a0_b0_do( opcode_t op )
 #endif
 {
     opcode_t op1, width;
@@ -1014,32 +1021,6 @@ static void op_a0_b0_do( opcode_t op )
         }
     }
 } /* ld_st_reg_reg_do */
-
-#ifdef OLDCPU
-static void sto_do( op ) opcode_t op;
-#else
-static void sto_do( opcode_t op )
-#endif
-{
-    opcode_t op1, width;
-    oi_t val;
-
-    op1 = get_op1();
-    width = width_from_op( op1 );
-    val = g_oi.rpc + (ioi_t) (int16_t) get_word( g_oi.rpc + 2 );
-    if ( 0 == width )
-        set_byte( val + get_reg_from_op( op1 ), (uint8_t) get_reg_from_op( op ) );
-    else if_1_is_width
-        set_word( val + ( get_reg_from_op( op1 ) << 1 ), (uint16_t) get_reg_from_op( op ) );
-#ifndef OI2
-    else if_2_is_width
-        set_dword( val + ( get_reg_from_op( op1 ) << 2 ), (uint32_t) get_reg_from_op( op ) );
-#ifdef OI8
-    else /* 3 == width */
-        set_qword( val + ( get_reg_from_op( op1 ) << 3 ), get_reg_from_op( op ) );
-#endif /* OI8 */
-#endif /* OI2 */
-} /* sto_do */
 
 #ifdef OLDCPU
 static bool op_80_90_do( op ) opcode_t op;
@@ -1110,7 +1091,7 @@ __forceinline static bool op_80_90_do( opcode_t op )
 #ifdef OLDCPU
 static void ldinc_do( op ) opcode_t op;
 #else
-static void ldinc_do( opcode_t op )
+__forceinline static void ldinc_do( opcode_t op )
 #endif
 {
     uint8_t op1, width;
@@ -1134,12 +1115,89 @@ static void ldinc_do( opcode_t op )
     val = (oi_t) ( 1 << width );
     add_reg_from_op( op1, val );
 } /* ldinc_do */
+
+#ifdef OLDCPU
+static void op_c0_d0_do( op ) opcode_t op;
+#else
+__forceinline static void op_c0_d0_do( opcode_t op )
+#endif
+{
+    opcode_t op1, op2, width;
+    oi_t val;
+    ioi_t ival;
+
+    op1 = get_op1();
+    switch( funct_from_op( op1 ) )
+    {
+        case 0:  /* ld / ldb rdst, [address] */
+        {
+            if ( 0 == reg_from_op( op ) ) /* can't write to rzero */
+                break;
+
+            val = g_oi.rpc + (int16_t) get_word( g_oi.rpc + 2 );
+            width = width_from_op( op1 );
+            if ( 0 == width )
+                set_reg_from_op( op, get_byte( val ) );
+            else if_1_is_width
+                set_reg_from_op( op, get_word( val ) );
+#ifndef OI2
+             else if_2_is_width
+                 set_reg_from_op( op, get_dword( val ) );
+#ifdef OI8
+             else /* 3 == width */
+                 set_reg_from_op( op, get_qword( val ) );
+#endif /* OI8 */
+#endif /* OI2 */
+                break;
+        }
+        case 1: /* sti / stib [address] constant -8..7 stored in r1 */
+        {
+            val = g_oi.rpc + (int16_t) get_word( g_oi.rpc + 2 );
+
+            /* r0 has high 3 bits and r1 has low 3 bits of CONSTANT */
+            ival = sign_extend_oi( ( ( op << 1 ) & 0x38 ) | reg_from_op( op1 ), 5 );
+            width = width_from_op( op1 );
+            if ( 0 == width )
+                set_byte( val, (uint8_t) ival );
+            else if_1_is_width
+                set_word( val, (uint16_t) ival );
+#ifndef OI2
+            else if_2_is_width
+                set_dword( val, (uint32_t) ival );
+#ifdef OI8
+            else /* 3 == width */
+                set_qword( val, (uint64_t) ival );
+#endif /* OI8 */
+#endif /* OI2 */
+            break;
+        }
+        case 2: /* math r0dst, r1left, r2right, funct2MATH */
+        {
+            if ( 0 == reg_from_op( op ) ) /* can't write to rzero */
+                break;
+
+            op2 = get_op2();
+            set_reg_from_op( op, Math( get_reg_from_op( op1 ), get_reg_from_op( op2 ), funct_from_op( op2 ) ) );
+            break;
+        }
+        default: /* case 3: */ /* cmp r0dst, r1left, r2right, funct2RELATION */
+        {
+            if ( 0 == reg_from_op( op ) ) /* can't write to rzero */
+                break;
+
+            op2 = get_op2();
+            set_reg_from_op( op, (oi_t) CheckRelation( get_reg_from_op( op1 ), get_reg_from_op( op2 ), funct_from_op( op2 ) ) );
+            break;
+        }
+    }
+} /* op_c0_d0_do */
+
 uint32_t ExecuteOI()
 {
 #ifndef OI2
     opcode_t byte_len;
 #endif /* OI2 */
-    opcode_t op, op1, op2, width;
+    opcode_t op, op1, width;
     oi_t val;
     ioi_t ival;
     uint32_t instruction_count;
@@ -1344,15 +1402,11 @@ uint32_t ExecuteOI()
             case 0xc2: case 0xc6: case 0xca: case 0xce: /* ldae rres (implied), address[ r ] */
             case 0xd2: case 0xd6: case 0xda: case 0xde: 
             {
-#ifdef OI2
                 val = get_reg_from_op( op ); /* separate statement needed for HiSoft C on CP/M */
                 g_oi.rres = read_imgword( read_imgword( g_oi.rpc + 1 ) + ( IMAGE_WIDTH * val ) );
-#else
-                g_oi.rres = read_imgword( read_imgword( g_oi.rpc + 1 ) + ( g_oi.image_width * get_reg_from_op( op ) ) );
-#endif
                 break;
             }
-            case 0xe2: case 0xe6: case 0xea: case 0xee: /* call address */
+            case 0xe2: case 0xe6: case 0xea: case 0xee: /* call address / call reg0 + address */
             case 0xf2: case 0xf6: case 0xfa: case 0xfe: 
             {
                 push( g_oi.rframe );
@@ -1395,8 +1449,15 @@ uint32_t ExecuteOI()
                     }
                     case 2: /* jrelb r0left, r1rightADDRESS, offset (from r1right), RELATION, (-128..127 pc offset) */
                     {
-                        if ( jrelb_do( op, op1 ) )
+                        if ( CheckRelation( get_reg_from_op( op ), get_byte( get_reg_from_op( op1 ) + get_byte( g_oi.rpc + 2 ) ), funct_from_op( op1 ) ) )
+                        {
+                            ival = (ioi_t) (int8_t) get_byte( g_oi.rpc + 3 );
+                            if ( (oi_t) ival <= (oi_t) 3 )
+                                jump_return( ival );
+                            else
+                                g_oi.rpc += ival;
                             continue;
+                        }
                         break;
                     }
                     default: /* case 3: */ /* jrel r0left, r1rightADDRESS, offset (from r1right), RELATION, (-128..127 pc offset) */
@@ -1454,7 +1515,21 @@ uint32_t ExecuteOI()
             case 0x83: case 0x87: case 0x8b: case 0x8f: /* sto address[ r1 ], r0 -- address is signed and pc-relative */
             case 0x93: case 0x97: case 0x9b: case 0x9f:
             {
-                sto_do( op );
+                op1 = get_op1();
+                width = width_from_op( op1 );
+                val = g_oi.rpc + (ioi_t) (int16_t) get_word( g_oi.rpc + 2 );
+                if ( 0 == width )
+                    set_byte( val + get_reg_from_op( op1 ), (uint8_t) get_reg_from_op( op ) );
+                else if_1_is_width
+                    set_word( val + ( get_reg_from_op( op1 ) << 1 ), (uint16_t) get_reg_from_op( op ) );
+#ifndef OI2
+                else if_2_is_width
+                    set_dword( val + ( get_reg_from_op( op1 ) << 2 ), (uint32_t) get_reg_from_op( op ) );
+#ifdef OI8
+                else /* 3 == width */
+                    set_qword( val + ( get_reg_from_op( op1 ) << 3 ), get_reg_from_op( op ) );
+#endif /* OI8 */
+#endif /* OI2 */
                 break;
             }
             case 0xa7: case 0xab: case 0xaf: /* ldo / ldob / ldoinc / ldoincb / ldi */
@@ -1466,70 +1541,7 @@ uint32_t ExecuteOI()
             case 0xc3: case 0xc7: case 0xcb: case 0xcf: /* ld / ldb / sti / stib / math */
             case 0xd3: case 0xd7: case 0xdb: case 0xdf:
             {
-                op1 = get_op1();
-                switch( funct_from_op( op1 ) )
-                {
-                    case 0:  /* ld / ldb rdst, [address] */
-                    {
-                        if ( 0 == reg_from_op( op ) ) /* can't write to rzero */
-                            break;
-
-                        val = g_oi.rpc + (int16_t) get_word( g_oi.rpc + 2 );
-                        width = width_from_op( op1 );
-                        if ( 0 == width )
-                            set_reg_from_op( op, get_byte( val ) );
-                        else if_1_is_width
-                            set_reg_from_op( op, get_word( val ) );
-#ifndef OI2
-                        else if_2_is_width
-                            set_reg_from_op( op, get_dword( val ) );
-#ifdef OI8
-                        else /* 3 == width */
-                            set_reg_from_op( op, get_qword( val ) );
-#endif /* OI8 */
-#endif /* OI2 */
-                        break;
-                    }
-                    case 1: /* sti / stib [address] constant -8..7 stored in r1 */
-                    {
-                        val = g_oi.rpc + (int16_t) get_word( g_oi.rpc + 2 );
-
-                        /* r0 has high 3 bits and r1 has low 3 bits of CONSTANT */
-                        ival = sign_extend_oi( ( ( op << 1 ) & 0x38 ) | reg_from_op( op1 ), 5 );
-                        width = width_from_op( op1 );
-                        if ( 0 == width )
-                            set_byte( val, (uint8_t) ival );
-                        else if_1_is_width
-                            set_word( val, (uint16_t) ival );
-#ifndef OI2
-                        else if_2_is_width
-                            set_dword( val, (uint32_t) ival );
-#ifdef OI8
-                        else /* 3 == width */
-                            set_qword( val, (uint64_t) ival );
-#endif /* OI8 */
-#endif /* OI2 */
-                        break;
-                    }
-                    case 2: /* math r0dst, r1left, r2right, funct2MATH */
-                    {
-                        if ( 0 == reg_from_op( op ) ) /* can't write to rzero */
-                            break;
-
-                        op2 = get_op2();
-                        set_reg_from_op( op, Math( get_reg_from_op( op1 ), get_reg_from_op( op2 ), funct_from_op( op2 ) ) );
-                        break;
-                    }
-                    default: /* case 3: */ /* cmp r0dst, r1left, r2right, funct2RELATION */
-                    {
-                        if ( 0 == reg_from_op( op ) ) /* can't write to rzero */
-                            break;
-
-                        op2 = get_op2();
-                        set_reg_from_op( op, (oi_t) CheckRelation( get_reg_from_op( op1 ), get_reg_from_op( op2 ), funct_from_op( op2 ) ) );
-                        break;
-                    }
-                }
+                op_c0_d0_do( op );
                 break;
             }
             case 0xe3: case 0xe7: case 0xeb: case 0xef: /* cstf r0left, r1right, funct1REL, reg2FRAMEOFFSET */
