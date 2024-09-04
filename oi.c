@@ -85,7 +85,7 @@
                 5:  value of funct in op1
                     0:   ldo:          r0dst = address[ r1off ]. offset is multiplied by width
                     1:   ldoinc:       r1++ (always one independent of width) then r0dst = address[ r1off ]. offset is multiplied by width
-                    2:   ldi           constant -32768..32767 sign extended. use ldb if possible and ldi's 3-byte form if the number is large or a 2-byte native width
+                    2:   ldiw          constant -32768..32767 sign extended. use ldb if possible and ldi's 3-byte form if the number is large or a 2-byte native width
                     exceptions:          overridden
                         a3 cpuinfo --     ldo/ldi rzero, ... / returns rres_16 version, rtmp_16 2 ascii char ID
                 6:  value of funct in op1
@@ -93,6 +93,8 @@
                     1:   sti:          [address ], r1 -8..7
                     2:   math r0dst, r1src, r2src, f2Math
                     3:   cmp r0dst, r1src, r2src, f2Relation
+                    4:   fzero r0index, r1address, 2-byte unsigned max count of width items. 0..65534
+                             on return, r0offset is an index to an array entry with a 0 value or 1 + count
                 7:  cstf               conditional stack frame store: cstf r0left r1right frame1REL reg2FRAMEOFFSET
 
         3 byte operations: high 3 bits 0..7:  ld, ldi, st, jmp, inc, dec, ldae, call
@@ -113,7 +115,8 @@
                    exceptions:      overridden
                      21 UNUSED     -- cmov rzero, ...
                 2: cmpst r0dst, r1src, Relation -- r0dst = ( pop() Relation r1src ). sets r0dst to a boolean 1 or 0
-                3: - 0/1 funct: ldf/stf. loads and stores r0 relative to rframe. r1 >= 0 is is frame[ ( 3 + r1 ) * 2 ]. r1 < 0 is frame[ ( 1 + r1 ) * 2 ]
+                3: - 0/1 funct: ldf/stf. loads and stores r0 relative to rframe.
+                                r1 >= 0 is is frame[ ( 3 + r1 ) * sizeof( oi_t ) ]. r1 < 0 is frame[ ( 1 + r1 ) * sizeof( oi_t ) ]
                    - 2 funct: ret x     -- pop x items off the stack and return
                    - 3 funct: ldib x    -- load immediate small signed values
                    - 4 funct: signex    -- sign extend the specified width to the native width
@@ -122,7 +125,7 @@
                    - 7 funct: moddiv. r0 = r0 % r1. push( r0 / r1 ). -- calculate both mod and div
                 4:
                    - 0 funct: syscall ( ( reg of byte 0 << 3 ) | ( reg of byte 1 ) ). 6 bit system ID. bit width must be 0.
-                   - 1 funct: pushf reg1CONSTANT. r1 >= 0 is is frame[ ( 3 + r1 ) * 2 ]. r1 < 0 is frame[ ( 1 + r1 ) * 2 ]
+                   - 1 funct: pushf reg1CONSTANT. r1 >= 0 is is frame[ ( 3 + r1 ) * sizeof( oi_t ) ]. r1 < 0 is frame[ ( 1 + r1 ) * sizeof( oi_t ) ]
                    - 2 funct: stst reg0.  i.e.  st [pop()], reg0
                    - 3 funct: width 0: addimgw reg0      adds the image's byte width
                               width 1: subimgw reg0
@@ -165,7 +168,7 @@
               e8 UNUSED     -- inv rsp
 
     Note on coding conventions and engineering decisions:
-      -- this is in C, not C++ so compilers work, including Aztec C  from 1984 for 8080 CP/M 2.2.
+      -- this is in C, not C++ so compilers work, including Aztec C from 1984 for 8080 CP/M 2.2.
       -- there are extra, unnecessary casts to appease older compilers.
       -- no #elif or defined() exists on older compilers.
       -- older compilers require #ifdef and #define statements to start in the first column
@@ -176,11 +179,12 @@
          slower code to save and load variables. This means code is duplicated, but if that bloat can be tolerated
          then code on old machines runs much faster.
       -- Aztec C has bugs with some casts, so there are workarounds
+      -- some type names start with t_ instead of ending with _t due to symbol name length limitations in older compilers
       -- inlining of functions doesn't work on older CP/M and DOS compilers, so:
               -- Portions that need to be inlined are in #define rather than functions, even though that's bad engineering
               -- Microsoft C v6 for DOS will only optimize functions smaller than some size, so ExecuteOI() calls helper
                  functions instead of just putting the code inline. Functions calls are slower, but without optimizations
-                 the emulator runs 2x slower on DOS.
+                 the emulator runs 2x slower on DOS. Less-frequently-used instructions are generally out of line.
               -- Modern compilers will inline everything anyway, so there is no performance cost of helper functions
       -- older compilers require a different function declaration syntax
       -- stack allocation and alignment is always native width even when running more narrow image width binaries.
@@ -309,9 +313,9 @@ void TraceInstructionsOI( bool t )
 #endif /* OI8 */
 
 #ifdef OI8
-#define get_preg_from_op( op ) ((oi_t *) (((uint8_t *) & g_oi.rzero) + ((op << 1) & 0x38)))
+#define get_preg_from_op( op ) ( (oi_t *) ( ( (uint8_t *) & g_oi.rzero ) + ( ( op << 1 ) & 0x38 ) ) )
 #else
-#define get_preg_from_op( op ) ((oi_t *) (((uint8_t *) & g_oi.rzero) + (op & 0x1c)))
+#define get_preg_from_op( op ) ( (oi_t *) ( ( (uint8_t *) & g_oi.rzero ) + ( op & 0x1c ) ) )
 #endif /* OI8 */
 
 #define get_reg_from_op( op ) ( * get_preg_from_op( op ) )
@@ -778,48 +782,6 @@ static void staddqw_do()
 #endif /* OI2 */
 
 #ifdef OLDCPU
-static void ldo_do( op ) opcode_t op;
-#else
-__forceinline static void ldo_do( opcode_t op )
-#endif
-{
-    size_t op1;
-    uint8_t width, funct1;
-    oi_t reg1;
-    ioi_t ival;
-
-    op1 = get_op1();
-    ival = (ioi_t) (int16_t) get_word( g_oi.rpc + 2 );
-    funct1 = funct_from_op( op1 );
-
-    if ( 2 == funct1 )
-        set_reg_from_op( op, (oi_t) ival ); /* ldi */
-    else /* funct1 is 0 or 1 */
-    {
-        if ( 1 == funct1 ) /* pre-increment register for ldoinc variants */
-            inc_reg_from_op( op1 );
-    
-        width = (uint8_t) width_from_op( op1 );
-    
-        if ( (oi_t) 0 == width )
-            set_reg_from_op( op, get_byte( g_oi.rpc + ival + get_reg_from_op( op1 ) ) ); /* ldob */
-        else if_1_is_width
-        {
-            reg1 = get_reg_from_op( op1 ); /* separate statement required for HiSoft C on CP/M */
-            set_reg_from_op( op, get_word( g_oi.rpc + ival + ( reg1 << 1 ) ) ); /* ldow */
-        }
-#ifndef OI2
-        else if_2_is_width
-            set_reg_from_op( op, get_dword( g_oi.rpc + ival + ( get_reg_from_op( op1 ) << 2 ) ) ); /* ldodw */
-#ifdef OI8
-        else
-            set_reg_from_op( op, get_qword( g_oi.rpc + ival + ( get_reg_from_op( op1 ) << 3 ) ) ); /* ldoqw */
-#endif
-#endif
-    }
-} /* ldo_do */
-
-#ifdef OLDCPU
 static void moddiv_do( op, op1 ) size_t op; size_t op1;
 #else
 __forceinline static void moddiv_do( size_t op, size_t op1 )
@@ -829,7 +791,7 @@ __forceinline static void moddiv_do( size_t op, size_t op1 )
     y = get_reg_from_op( op1 );
     if ( (oi_t) 0 == y )
     {
-        push( 0 ); /* when the exist, an exception should be raised */
+        push( 0 ); /* when they exist, an exception should be raised */
         return;
     }
 
@@ -841,13 +803,10 @@ __forceinline static void moddiv_do( size_t op, size_t op1 )
 #ifdef OLDCPU
 static oi_t frame_offset( offset ) ioi_t offset;
 #else
-static oi_t frame_offset( ioi_t offset )
+__forceinline static oi_t frame_offset( ioi_t offset )
 #endif
 {
-    if ( offset >= 0 )
-        return g_oi.rframe + ( ( 3 + offset ) * sizeof( oi_t ) );
-
-    return g_oi.rframe + ( ( 1 + offset ) * sizeof( oi_t ) );
+    return g_oi.rframe + ( sizeof( oi_t ) * ( offset + ( ( offset >= 0 ) ? 3 : 1 ) ) );
 } /* frame_offset */
 
 #ifdef OLDCPU
@@ -921,42 +880,12 @@ __forceinline static void stinc_do( opcode_t op )
 #ifdef OI8
     else /* 3 == width */
         set_qword( get_reg_from_op( op ), (uint64_t) (int64_t) val );
-#endif
-#endif
-
-    inc_amount = (oi_t) ( 1 << width );
-    add_reg_from_op( op, inc_amount );
-} /* stinc_do */
-
-#ifdef OLDCPU
-static void stinc_reg_do( op ) opcode_t op;
-#else
-__forceinline static void stinc_reg_do( opcode_t op )
-#endif
-{
-    uint8_t width;
-    oi_t inc_amount, val;
-    opcode_t op1;
-
-    op1 = get_op1();
-    val = get_reg_from_op( op1 );
-    width = (uint8_t) width_from_op( get_op1() );
-    if ( 0 == width )
-        set_byte( get_reg_from_op( op ), (uint8_t) val );
-    else if_1_is_width
-        set_word( get_reg_from_op( op ), (uint16_t) val );
-#ifndef OI2
-    else if_2_is_width
-        set_dword( get_reg_from_op( op ), (uint32_t) val );
-#ifdef OI8
-    else /* 3 == width */
-        set_qword( get_reg_from_op( op ), val );
 #endif /* OI8 */
 #endif /* OI2 */
 
     inc_amount = (oi_t) ( 1 << width );
     add_reg_from_op( op, inc_amount );
-} /* stinc_reg_do */
+} /* stinc_do */
 
 #ifdef OLDCPU
 static void op_a0_b0_do( op ) opcode_t op;
@@ -1064,7 +993,27 @@ __forceinline static bool op_80_90_do( opcode_t op )
         }
         case 4: /* stinc [reg0], reg1  -- then increment reg0 by width of store */
         {
-            stinc_reg_do( op );
+            op1 = get_op1();
+            val = get_reg_from_op( op1 );
+            width = (uint8_t) width_from_op( get_op1() );
+            if ( 0 == width )
+                set_byte( get_reg_from_op( op ), (uint8_t) val );
+            else if_1_is_width
+                set_word( get_reg_from_op( op ), (uint16_t) val );
+#ifndef OI2
+            else if_2_is_width
+                set_dword( get_reg_from_op( op ), (uint32_t) val );
+#ifdef OI8
+            else /* 3 == width */
+                set_qword( get_reg_from_op( op ), val );
+#endif /* OI8 */
+#endif /* OI2 */
+
+            if ( width > 0 )
+                val = (oi_t) ( 1 << width );
+            else
+                val = (oi_t) 1;
+            add_reg_from_op( op, val );
             break;
         }
         case 5: /* swap reg0, reg1 */
@@ -1117,6 +1066,41 @@ __forceinline static void ldinc_do( opcode_t op )
 } /* ldinc_do */
 
 #ifdef OLDCPU
+static void cmov_do( op ) opcode_t op;
+#else
+__forceinline static void cmov_do( opcode_t op )
+#endif
+{
+    uint8_t op1;
+    op1 = get_op1();
+    if ( ( (uint8_t) 3 == funct_from_op( op1 ) ) || /* shortcut for NE */
+         ( CheckRelation( get_reg_from_op( op ), get_reg_from_op( op1 ), funct_from_op( op1 ) ) ) )
+        set_reg_from_op( op, get_reg_from_op( op1 ) );
+} /* cmov_do */
+
+#ifdef OLDCPU
+static void signex_do( op ) opcode_t op;
+#else
+__forceinline static void signex_do( opcode_t op )
+#endif
+{
+    opcode_t width;
+    width = width_from_op( get_op1() );
+    if ( 0 == width )
+#ifdef AZTECCPM
+        set_reg_from_op( op, sign_extend_oi( get_reg_from_op( op ), 7 ) ); /* the casts below don't work with Aztec C */
+#else
+        set_reg_from_op( op, (oi_t) (ioi_t) (int8_t) get_reg_from_op( op ) );
+#endif
+    else if_1_is_width
+        set_reg_from_op( op, (oi_t) (ioi_t) (int16_t) get_reg_from_op( op ) );
+#ifndef OI2
+    else if_2_is_width
+        set_reg_from_op( op, (oi_t) (ioi_t) (int32_t) get_reg_from_op( op ) );
+#endif /* OI2 */
+} /* signex_do */
+
+#ifdef OLDCPU
 static void op_c0_d0_do( op ) opcode_t op;
 #else
 __forceinline static void op_c0_d0_do( opcode_t op )
@@ -1125,6 +1109,15 @@ __forceinline static void op_c0_d0_do( opcode_t op )
     opcode_t op1, op2, width;
     oi_t val;
     ioi_t ival;
+    uint8_t * pb;
+    uint16_t * pw;
+    oi_t index, limit;
+#ifndef OI2
+    uint32_t * pdw;
+#ifdef OI8
+    uint64_t * pqw;
+#endif /* OI8 */
+#endif /* OI2 */
 
     op1 = get_op1();
     switch( funct_from_op( op1 ) )
@@ -1180,13 +1173,51 @@ __forceinline static void op_c0_d0_do( opcode_t op )
             set_reg_from_op( op, Math( get_reg_from_op( op1 ), get_reg_from_op( op2 ), funct_from_op( op2 ) ) );
             break;
         }
-        default: /* case 3: */ /* cmp r0dst, r1left, r2right, funct2RELATION */
+        case 3: /* cmp r0dst, r1left, r2right, funct2RELATION */
         {
             if ( 0 == reg_from_op( op ) ) /* can't write to rzero */
                 break;
 
             op2 = get_op2();
             set_reg_from_op( op, (oi_t) CheckRelation( get_reg_from_op( op1 ), get_reg_from_op( op2 ), funct_from_op( op2 ) ) );
+            break;
+        }
+        default: /* case 4: fzero r0index, r1array, MAX 0..65535 */
+        {
+            /* while index < MAX, look for a 0 at each index in the array */
+            limit = get_word( g_oi.rpc + 2 );
+            index = (oi_t) get_reg_from_op( op );
+            width = width_from_op( op1 );
+            if ( 0 == width )
+            {
+                pb = ram_address( get_reg_from_op( op1 ) );
+                while ( ( index < limit ) && ( 0 != pb[ index ] ) )
+                    index++;
+            }
+            else if_1_is_width
+            {
+                pw = (uint16_t *) ram_address( get_reg_from_op( op1 ) );
+                while ( ( index < limit ) && ( 0 != pw[ index ] ) )
+                    index++;
+            }
+#ifndef OI2
+            else if_2_is_width
+            {
+                pdw = (uint32_t *) ram_address( get_reg_from_op( op1 ) );
+                while ( ( index < limit ) && ( (uint32_t) 0 != pdw[ index ] ) )
+                    index++;
+            }
+#ifdef OI8
+            else /* 3 == width */
+            {
+                pqw = (uint64_t *) ram_address( get_reg_from_op( op1 ) );
+                while ( ( index < limit ) && ( 0 != pqw[ index ] ) )
+                    index++;
+            }
+#endif /* OI8 */
+#endif /* OI2 */
+
+            set_reg_from_op( op, index );
             break;
         }
     }
@@ -1202,11 +1233,13 @@ uint32_t ExecuteOI()
     ioi_t ival;
     uint32_t instruction_count;
 
+    uint8_t funct1;
+    oi_t reg1;
+
     instruction_count = 0;
 
     do
     {
-        op = get_op();
 #ifndef NDEBUG
         assert( (oi_t) 0 == g_oi.rzero );
         assert( (oi_t) 0 == read_imgword( 0 ) );
@@ -1218,6 +1251,7 @@ uint32_t ExecuteOI()
         }
         instruction_count++;
 #endif /* NDEBUG */
+        op = get_op();
         switch( op )
         {
             case 0x00: { OIHalt(); goto _all_done; } /* halt */
@@ -1300,7 +1334,7 @@ uint32_t ExecuteOI()
             case 0xa0: /* addst */
             {
                 pop( val );
-                g_oi.rres = val + g_oi.rres;
+                g_oi.rres += val;
                 break;
             }
             case 0xac: case 0xb0: case 0xb4: case 0xb8: case 0xbc: /* shl r */
@@ -1338,7 +1372,7 @@ uint32_t ExecuteOI()
             case 0xe0: /* andst */
             {
                 pop( val );
-                g_oi.rres = val & g_oi.rres;
+                g_oi.rres &= val;
                 break;
             }
             case 0x06: case 0x0a: case 0x0e: /* ld r, [address] */
@@ -1532,13 +1566,41 @@ uint32_t ExecuteOI()
 #endif /* OI2 */
                 break;
             }
-            case 0xa7: case 0xab: case 0xaf: /* ldo / ldob / ldoinc / ldoincb / ldi */
+            case 0xa7: case 0xab: case 0xaf: /* ldo / ldob / ldoinc / ldoincb / ldiw */
             case 0xb3: case 0xb7: case 0xbb: case 0xbf:
             {
-                ldo_do( op );
+                ival = (ioi_t) (int16_t) get_word( g_oi.rpc + 2 );
+                op1 = get_op1();
+                funct1 = funct_from_op( op1 );
+            
+                if ( 2 == funct1 )
+                    set_reg_from_op( op, (oi_t) ival ); /* ldiw */
+                else /* funct1 is 0 or 1 for ldo variants */
+                {
+                    if ( 1 == funct1 ) /* pre-increment register for ldoinc variants */
+                        inc_reg_from_op( op1 );
+                
+                    width = (uint8_t) width_from_op( op1 );
+                
+                    if ( (oi_t) 0 == width )
+                        set_reg_from_op( op, get_byte( g_oi.rpc + ival + get_reg_from_op( op1 ) ) ); /* ldob */
+                    else if_1_is_width
+                    {
+                        reg1 = get_reg_from_op( op1 ); /* separate statement required for HiSoft C on CP/M */
+                        set_reg_from_op( op, get_word( g_oi.rpc + ival + ( reg1 << 1 ) ) ); /* ldow */
+                    }
+#ifndef OI2
+                    else if_2_is_width
+                        set_reg_from_op( op, get_dword( g_oi.rpc + ival + ( get_reg_from_op( op1 ) << 2 ) ) ); /* ldodw */
+#ifdef OI8
+                    else
+                        set_reg_from_op( op, get_qword( g_oi.rpc + ival + ( get_reg_from_op( op1 ) << 3 ) ) ); /* ldoqw */
+#endif /* OI8 */
+#endif /* OI2 */
+                }
                 break;
             }
-            case 0xc3: case 0xc7: case 0xcb: case 0xcf: /* ld / ldb / sti / stib / math */
+            case 0xc3: case 0xc7: case 0xcb: case 0xcf: /* ld / ldb / sti / stib / math / fzero */
             case 0xd3: case 0xd7: case 0xdb: case 0xdf:
             {
                 op_c0_d0_do( op );
@@ -1560,10 +1622,7 @@ uint32_t ExecuteOI()
             case 0x25: case 0x29: case 0x2d: /* cmov r0dst, r1src, funct1REL */
             case 0x31: case 0x35: case 0x39: case 0x3d:
             {
-                op1 = get_op1();
-                if ( ( (uint8_t) 3 == funct_from_op( op1 ) ) || /* shortcut for NE */
-                     ( CheckRelation( get_reg_from_op( op ), get_reg_from_op( op1 ), funct_from_op( op1 ) ) ) )
-                    set_reg_from_op( op, get_reg_from_op( op1 ) );
+                cmov_do( op );
                 break;
             }
             case 0x41: case 0x45: case 0x49: case 0x4d: /* cmpst rdst, rright, relation */
@@ -1605,19 +1664,7 @@ uint32_t ExecuteOI()
                     }
                     case 4: /* signex */
                     {
-                        width = width_from_op( op1 );
-                        if ( 0 == width )
-#ifdef AZTECCPM
-                            set_reg_from_op( op, sign_extend_oi( get_reg_from_op( op ), 7 ) ); /* the casts below don't work with Aztec C */
-#else
-                            set_reg_from_op( op, (oi_t) (ioi_t) (int8_t) get_reg_from_op( op ) );
-#endif
-                        else if_1_is_width
-                            set_reg_from_op( op, (oi_t) (ioi_t) (int16_t) get_reg_from_op( op ) );
-#ifndef OI2
-                        else if_2_is_width
-                            set_reg_from_op( op, (oi_t) (ioi_t) (int32_t) get_reg_from_op( op ) );
-#endif /* OI2 */
+                        signex_do( op );
                         break;
                     }
                     case 5: /* memf: memfill address in rarg1 with rtmp for rarg2 iterations (bytes or words ) */

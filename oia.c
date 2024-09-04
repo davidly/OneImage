@@ -48,7 +48,7 @@ enum TokenTypes
 {
     T_INVALID = 0, T_DATA, T_DATAEND, T_CODE, T_CODEEND,
     T_STRING, T_WORD, T_BYTE, T_IMAGE_T, T_ALIGN, T_DEFINE, T_LABEL,
-    T_LD, T_LDB, T_LDINC, T_LDO, T_LDOB, T_LDOINC, T_LDOINCB, T_LDF, T_LDAE, T_LDI, T_LDIB,
+    T_LD, T_LDB, T_LDINC, T_LDO, T_LDOB, T_LDOINC, T_LDOINCB, T_LDF, T_LDAE, T_LDI, T_LDIB, T_LDIW,
     T_ST, T_STI, T_STB, T_STIB, T_STINC, T_STINCB, T_STO, T_STOB, T_STF, T_STWAE,
     T_J, T_JI, T_JREL, T_JRELB, T_SHL, T_SHLIMG, T_SHR, T_SHRIMG, T_MEMF, T_MEMFB, T_STADDB,
     T_ADD, T_SUB, T_IMUL, T_IDIV, T_OR, T_XOR, T_AND, T_CMP,
@@ -59,14 +59,14 @@ enum TokenTypes
     T_MOV, T_CMOV, T_RET, T_RET0, T_RETNF, T_RET0NF, T_INV,
     T_CSTF, T_MATHST, T_MATH, T_PLUS, T_IMGWID, T_ADDIMGW, T_SUBIMGW, T_ADDNATW, T_SUBNATW, T_NATWID,
     T_SIGNEXB, T_SIGNEXW, T_SIGNEXDW, T_SWAP,
-    T_CPUINFO, T_CALLNF, T_CALL
+    T_FZERO, T_FZEROB, T_CPUINFO, T_CALLNF, T_CALL
 };
 
 static const char * TokenSet[] =
 {
     "INVALID", ".DATA", ".DATAEND", ".CODE", ".CODEEND",
     "STRING", "WORD", "BYTE", "IMAGE_T", "ALIGN", "DEFINE", "LABEL",
-    "LD", "LDB", "LDINC", "LDO", "LDOB", "LDOINC", "LDOINCB", "LDF", "LDAE", "LDI", "LDIB",
+    "LD", "LDB", "LDINC", "LDO", "LDOB", "LDOINC", "LDOINCB", "LDF", "LDAE", "LDI", "LDIB", "LDIW",
     "ST", "STI", "STB", "STIB", "STINC", "STINCB", "STO", "STOB", "STF", "STWAE",
     "J", "JI", "JREL", "JRELB", "SHL", "SHLIMG", "SHR", "SHRIMG", "MEMF", "MEMFB", "STADDB",
     "ADD", "SUB", "IMUL", "IDIV", "OR", "XOR", "AND", "CMP",
@@ -77,7 +77,7 @@ static const char * TokenSet[] =
     "MOV", "CMOV", "RET", "RET0", "RETNF", "RET0NF", "INV",
     "CSTF", "MATHST", "MATH", "+", "IMGWID", "ADDIMGW", "SUBIMGW", "ADDNATW", "SUBNATW", "NATWID",
     "SIGNEXB", "SIGNEXW", "SIGNEXDW", "SWAP",
-    "CPUINFO", "CALLNF", "CALL"
+    "FZERO", "FZEROB", "CPUINFO", "CALLNF", "CALL"
 };
 
 bool is_reg( size_t t ) { return ( t >= T_RZERO && t <= T_RTMP ); }
@@ -869,6 +869,31 @@ int cdecl main( int argc, char * argv[] )
                 size = (uint16_t) ( 1 + strlen( tokens[ 2 ] ) );
                 add_label( tokens[ 1 ], size, true, 0 );
                 initialized_data_so_far += size;
+                break;
+            }
+            case T_FZERO:
+            case T_FZEROB:
+            {
+                if ( 4 != token_count )
+                    show_error( "fzero takes 3 arguments: fzero register, register, 0..65535" );
+
+                t1 = find_token( tokens[ 1 ] );
+                t2 = find_token( tokens[ 2 ] );
+                t3 = find_token( tokens[ 3 ] );
+
+                if ( !is_reg( t1 ) || !is_reg( t2 ) )
+                    show_error( "fzero takes 3 arguments: fzero register, register, 0..65535" );
+
+                if  ( !is_number( tokens[ 3 ] ) && !find_define( tokens[ 3 ] ) )
+                    show_error( "fzero takes 3 arguments: fzero register, register, 0..65535" );
+
+                val = number_or_define( tokens[ 3 ] );
+                if ( val > 65535 )
+                    show_error( "fzero takes 3 arguments: fzero register, register, 0..65535" );
+
+                code[ code_so_far++ ] = compose_op( 6, reg_from_token( t1 ), 3 );
+                code[ code_so_far++ ] = compose_op( 4, reg_from_token( t2 ), ( T_FZEROB == t ) ? 0 : g_byte_len );
+                initialize_word_value( & code_so_far, val );
                 break;
             }
             case T_CPUINFO:
@@ -1837,8 +1862,37 @@ int cdecl main( int argc, char * argv[] )
                 code[ code_so_far++ ] = (uint8_t) ( ( 3 << 5 ) | (uint8_t) ( 0x1f & ival ) );
                 break;
             }
+            case T_LDIW:
+            {
+                if ( 2 == g_image_width )
+                    goto _use_T_LDI;
+
+                if ( 3 != token_count )
+                    show_error( "ldiw takes two arguments" );
+                t1 = find_token( tokens[ 1 ] );
+                if ( !is_reg( t1 ) || ( T_RZERO == t1 ) )
+                    show_error( "non-rzero register expected" );
+
+                t2 = find_token( tokens[ 2 ] );
+                if ( ! ( ( T_INVALID == t2 ) || is_number( tokens[ 2 ] ) || T_DEFINE == t2 ) )
+                    show_error( "number, define, or label expected as second argument" );
+
+                if ( is_number( tokens[ 2 ] ) || define_exists( tokens[ 2 ] ) )
+                    ival = number_or_define( tokens[ 2 ] );
+                else
+                    ival = 0; /* placeholder */
+
+                if ( ( ival < -32768 ) || ( ival > 32767 ) )
+                    show_error( "value is out of 2-byte range" );
+
+                code[ code_so_far++ ] = compose_op( 5, reg_from_token( t1 ), 3 );
+                code[ code_so_far++ ] = compose_op( 2, 0, 1 );
+                initialize_word_value( & code_so_far, ival );
+                break;
+            }
             case T_LDI:
             {
+                _use_T_LDI:
                 if ( 3 != token_count )
                     show_error( "ldi takes two arguments" );
                 t1 = find_token( tokens[ 1 ] );
@@ -1854,7 +1908,7 @@ int cdecl main( int argc, char * argv[] )
                 else
                     ival = 0; /* placeholder */
 
-                if ( ( g_image_width > (uint8_t) 2 ) && ( (iwidth_t) 0 != ival ) && ( ival > -32768 ) && ( ival < 32767 ) )
+                if ( ( g_image_width > (uint8_t) 2 ) && ( (iwidth_t) 0 != ival ) && ( ival > -32768 ) && ( ival < 32767 ) ) 
                 {
                     code[ code_so_far++ ] = compose_op( 5, reg_from_token( t1 ), 3 );
                     code[ code_so_far++ ] = compose_op( 2, 0, 1 );
@@ -2375,8 +2429,30 @@ int cdecl main( int argc, char * argv[] )
                     code_so_far++;
                 break;
             }
+            case T_LDIW:
+            {
+                if ( 2 == g_image_width )
+                    goto _p2_use_T_LDI;
+
+                code_so_far += 2;
+
+                if ( !is_number( tokens[ 2 ] ) && !find_define( tokens[ 2 ] ) )
+                {
+                    plabel = find_label( tokens[ 2 ] );
+                    val = plabel->offset;
+                    if ( val > 65535 )
+                        show_error( "ldiw can't reference this label because its address is too large" );
+
+                    word_zero_check( code_so_far );
+                    initialize_word_value( & code_so_far, val );
+                }
+                else
+                    code_so_far += 2;
+                break;
+            }
             case T_LDI:
             {
+                _p2_use_T_LDI:
                 code_so_far++;
 
                 if ( !is_number( tokens[ 2 ] ) && !find_define( tokens[ 2 ] ) )
@@ -2489,6 +2565,8 @@ int cdecl main( int argc, char * argv[] )
             case T_CPUINFO:
             case T_CSTF:
             case T_MATH:
+            case T_FZERO:
+            case T_FZEROB:
             case T_CMP:
             {
                 code_so_far += 4;

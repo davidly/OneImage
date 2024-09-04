@@ -87,7 +87,7 @@ start:
     stob    array[ rarg2 ], rres         ; a[ n ] = x MOD n
     dec     rarg2                        ; n--
     ldob    rres, array[ rarg2 ]
-    ldi     rarg1, 10
+    ldiw    rarg1, 10
     imul    rres, rarg1                  ; 10 * a[ n - 1 ]
     mathst  rres, rres, add              ; add results of multiplication and division
     j       rarg2, rzero, ne, _innerloop
@@ -95,7 +95,7 @@ start:
     mov     rarg1, rres
     syscall syscall_print_integer
 
-    ldi     rarg1, 9
+    ldiw    rarg1, 9
     j       rtmp, rarg1, gt, _outerloop
 
     ldi     rarg1, str_done

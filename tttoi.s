@@ -34,7 +34,7 @@ define syscall_print_integer  2
 
 .code
 start:
-    ldi     rtmp, iterations
+    ldiw    rtmp, iterations
     st      [loop_count], rtmp
 
     ldf     rarg1, 0
@@ -104,22 +104,22 @@ atou: ; string in arg1. result in rres
 
   _skipspaces:
         ldb     rtmp, [rarg1]
-        ldi     rres, 32
+        ldiw    rres, 32
         j       rtmp, rres, ne, _atouNext
         inc     rarg1
         jmp     _skipspaces
 
   _atouNext:
         ldb     rtmp, [rarg1]
-        ldi     rres, 48
+        ldiw    rres, 48
         j       rtmp, rres, lt, _atouDone
-        ldi     rres, 57
+        ldiw    rres, 57
         j       rtmp, rres, gt, _atouDone
 
         ldib    rres, 10
         imul    rarg2, rres
 
-        ldi     rres, 48
+        ldiw    rres, 48
         sub     rtmp, rres
         add     rarg2, rtmp
         inc     rarg1
@@ -154,7 +154,7 @@ minmax_max:
     ji      rarg2, 4, lt, _max_after_winner_check
 
     ; rres already has o_piece
-    ldi     rarg1, board
+    ldiw    rarg1, board
     callnf  procs[ rtmp ]
 
     ji      rres, o_piece, ne, _max_after_winner_check
@@ -168,10 +168,14 @@ minmax_max:
     ldib    rtmp, -1                        ; i in for loop 0..8
 
   _max_loop:
-    ji      rtmp, 8, eq, _max_return_value
+    inc     rtmp
+    ldiw    rres, board
+    fzerob  rtmp, rres, 9                   ; while rtmp < 9, increment rtmp until 0 == rres[rtmp]
+    ji      rtmp, 8, gt, _max_return_value
 
-    ldoincb rres, board[ rtmp ]
-    j       rres, rzero, ne, _max_loop
+;    ji      rtmp, 8, eq, _max_return_value
+;    ldoincb rres, board[ rtmp ]
+;    j       rres, rzero, ne, _max_loop
 
     ldib    rres, x_piece
     stob    board[ rtmp ], rres
@@ -212,7 +216,7 @@ minmax_min:
     ji      rarg2, 4, lt, _min_after_winner_check
 
     ; rres already has x_piece
-    ldi     rarg1, board
+    ldiw    rarg1, board
     callnf  procs[ rtmp ]
 
     ji      rres, x_piece, ne, _min_check_tie
@@ -231,10 +235,14 @@ minmax_min:
     ldib    rtmp, -1                        ; i in for loop 0..8
 
   _min_loop:
-    ji      rtmp, 8, eq, _min_return_value
+    inc     rtmp
+    ldiw    rres, board
+    fzerob  rtmp, rres, 9                   ; while rtmp < 9, increment rtmp until 0 == rres[rtmp]
+    ji      rtmp, 8, gt, _min_return_value
 
-    ldoincb rres, board[ rtmp ]
-    j       rres, rzero, ne, _min_loop
+;    ji      rtmp, 8, eq, _min_return_value
+;    ldoincb rres, board[ rtmp ]
+;    j       rres, rzero, ne, _min_loop
 
     ldib    rres, o_piece
     stob    board[ rtmp ], rres

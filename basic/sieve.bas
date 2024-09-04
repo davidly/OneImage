@@ -11,7 +11,7 @@
 130 IF K% > 8190 goto 170
 140 FL%(K%) = 0
 150 K% = K% + PR%
-160 GOTO 130
+160 IF K% <= 8190 goto 140
 170 CO% = CO% + 1
 180 NEXT I%
 190 NEXT IT%
