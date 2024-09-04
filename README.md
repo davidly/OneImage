@@ -8,6 +8,6 @@ In short:
 
 Two functions in tttoi.s as compared with assembly implementations for other ISAs found [here](https://github.com/davidly/ttt)
 
-![counts](https://github.com/user-attachments/assets/56116823-ff37-45fd-ae38-800f5c742ad6)
+![counts](https://github.com/user-attachments/assets/df3ffa27-c77e-4134-b737-101e1eff5859)
 
 The manx, hisoft, and mscv6 folders contain build scripts for compiling oios with CP/M 2.2 and DOS compilers found in (cpm_compilers)[https://github.com/davidly/cpm_compilers] and (dos_compilers)[https://github.com/davidly/dos_compilers] using NTVCM and NTVDM emulators found in sister repos.
