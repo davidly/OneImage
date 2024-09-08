@@ -48,8 +48,8 @@ enum TokenTypes
 {
     T_INVALID = 0, T_DATA, T_DATAEND, T_CODE, T_CODEEND,
     T_STRING, T_WORD, T_BYTE, T_IMAGE_T, T_ALIGN, T_DEFINE, T_LABEL,
-    T_LD, T_LDB, T_LDINC, T_LDO, T_LDOB, T_LDOINC, T_LDOINCB, T_LDF, T_LDAE, T_LDI, T_LDIB, T_LDIW,
-    T_ST, T_STI, T_STB, T_STIB, T_STINC, T_STINCB, T_STO, T_STOB, T_STF, T_STWAE,
+    T_LD, T_LDB, T_LDINC, T_LDO, T_LDOB, T_LDORB, T_LDOINC, T_LDOINCB, T_LDF, T_LDAE, T_LDI, T_LDIB, T_LDIW,
+    T_ST, T_STI, T_STB, T_STIB, T_STINC, T_STINCB, T_STO, T_STOB, T_STOIB, T_STORB, T_STF, T_STWAE,
     T_J, T_JI, T_JREL, T_JRELB, T_SHL, T_SHLIMG, T_SHR, T_SHRIMG, T_MEMF, T_MEMFB, T_STADDB,
     T_ADD, T_SUB, T_IMUL, T_IDIV, T_OR, T_XOR, T_AND, T_CMP,
     T_INC, T_DEC, T_JMP, T_ADDST, T_SUBST, T_IDIVST, T_IMULST,
@@ -66,8 +66,8 @@ static const char * TokenSet[] =
 {
     "INVALID", ".DATA", ".DATAEND", ".CODE", ".CODEEND",
     "STRING", "WORD", "BYTE", "IMAGE_T", "ALIGN", "DEFINE", "LABEL",
-    "LD", "LDB", "LDINC", "LDO", "LDOB", "LDOINC", "LDOINCB", "LDF", "LDAE", "LDI", "LDIB", "LDIW",
-    "ST", "STI", "STB", "STIB", "STINC", "STINCB", "STO", "STOB", "STF", "STWAE",
+    "LD", "LDB", "LDINC", "LDO", "LDOB", "LDORB", "LDOINC", "LDOINCB", "LDF", "LDAE", "LDI", "LDIB", "LDIW",
+    "ST", "STI", "STB", "STIB", "STINC", "STINCB", "STO", "STOB", "STOIB", "STORB", "STF", "STWAE",
     "J", "JI", "JREL", "JRELB", "SHL", "SHLIMG", "SHR", "SHRIMG", "MEMF", "MEMFB", "STADDB",
     "ADD", "SUB", "IMUL", "IDIV", "OR", "XOR", "AND", "CMP",
     "INC", "DEC", "JMP", "ADDST", "SUBST", "IDIVST", "IMULST",
@@ -1558,6 +1558,62 @@ int cdecl main( int argc, char * argv[] )
                 initialize_word_value( & code_so_far, val );
                 break;
             }
+            case T_LDORB:
+            {
+                if ( 4 != token_count )
+                    show_error( "ldorb 3 values: ldorb rdest, raddress[ rindex ]" );
+                t1 = find_token( tokens[ 1 ] );
+                t2 = find_token( tokens[ 2 ] );
+                t3 = find_token( tokens[ 3 ] );
+
+                if ( !is_reg( t1 ) || !is_reg( t2 ) || !is_reg( t3 ) )
+                    show_error( "all three arguments must be registers" );
+
+                code[ code_so_far++ ] = compose_op( 6, reg_from_token( t1 ), 3 );
+                code[ code_so_far++ ] = compose_op( 7, reg_from_token( t2 ), 0 );
+                code[ code_so_far++ ] = compose_op( 0, reg_from_token( t3 ), 0 );
+                code[ code_so_far++ ] = 0;
+                break;
+            }
+            case T_STOIB:
+            {
+                if ( 4 != token_count )
+                    show_error( "stoib 3 values: stoib raddress[ rindex ], 2-byte IMMEDIATE" );
+                t1 = find_token( tokens[ 1 ] );
+                t2 = find_token( tokens[ 2 ] );
+                t3 = find_token( tokens[ 3 ] );
+
+                if ( !is_reg( t1 ) || !is_reg( t2 ) )
+                    show_error( "first two arguments must be registers" );
+
+                if ( !is_number( tokens[ 3 ] ) && !find_define( tokens[ 3 ] ) )
+                    show_error( "third argument must be a constant" );
+
+                val = number_or_define( tokens[ 3 ] );
+                check_if_in_i16_range( val );
+
+                code[ code_so_far++ ] = compose_op( 6, reg_from_token( t1 ), 3 );
+                code[ code_so_far++ ] = compose_op( 5, reg_from_token( t2 ), 0 );
+                initialize_word_value( & code_so_far, val );
+                break;
+            }
+            case T_STORB:
+            {
+                if ( 4 != token_count )
+                    show_error( "storb 3 values: stoib raddress[ rindex ], rvalue" );
+                t1 = find_token( tokens[ 1 ] );
+                t2 = find_token( tokens[ 2 ] );
+                t3 = find_token( tokens[ 3 ] );
+
+                if ( !is_reg( t1 ) || !is_reg( t2 ) || !is_reg( t3 ) )
+                    show_error( "all three arguments must be registers" );
+
+                code[ code_so_far++ ] = compose_op( 6, reg_from_token( t1 ), 3 );
+                code[ code_so_far++ ] = compose_op( 6, reg_from_token( t2 ), 0 );
+                code[ code_so_far++ ] = compose_op( 0, reg_from_token( t3 ), 0 );
+                code[ code_so_far++ ] = 0;
+                break;
+            }
             case T_STOB:
             {
                 if ( 4 != token_count )
@@ -2568,6 +2624,9 @@ int cdecl main( int argc, char * argv[] )
             case T_FZERO:
             case T_FZEROB:
             case T_CMP:
+            case T_STOIB:
+            case T_STORB:
+            case T_LDORB:
             {
                 code_so_far += 4;
                 break;

@@ -69,6 +69,7 @@ start:
     zero    rframe
 
   next_prime:
+;    ldorb   rtmp, rarg1[ rframe ]
     ldob    rtmp, flags[ rframe ]
     j       rtmp, rzero, eq, flag_is_off
 
@@ -80,7 +81,7 @@ start:
     math    rtmp, rframe, rarg2, add
     j       rtmp, rres, gt, inc_count       ; redundant check to that in the kloop but this makes the loop faster
 
-    staddb                                  ; [ rtmp + rframe ] = 0. rtmp += rarg2. repeat while rtmp <= rres.
+    staddb                                  ; rarg1[ rtmp ] = 0. rtmp += rarg2. repeat while rtmp <= rres.
 
   inc_count:
     inc     [count]

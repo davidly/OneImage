@@ -70,7 +70,7 @@ start:
     ; a[ 1 ] := 2;
     ; a[ 0 ] := 0;
 
-    ldi     [rarg1], array
+    ldi     rarg1, array
     stincb  [rarg1], 0
     stincb  [rarg1], 2
 

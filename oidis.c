@@ -498,7 +498,13 @@ const char * DisassembleOI( uint8_t * pop, oi_t rpc, uint8_t image_width )
                     else if ( 3 == op1funct )
                         sprintf( buf, "cmp %s, %s, %s, %s", RegOpString( op ), RegOpString( op1 ), RegOpString( op2 ), RelationString( funct_from_op( op2 ) ) );
                     else if ( 4 == op1funct )
-                        sprintf( buf, "fzero%s, %s, %s, %04x", WidthSuffix( width ), RegOpString( op ), RegOpString( op1 ), getword( pop + 2 )  );
+                        sprintf( buf, "fzero%s, %s, %s, %04x", WidthSuffix( width ), RegOpString( op ), RegOpString( op1 ), getword( pop + 2 ) );
+                    else if ( 5 == op1funct )
+                        sprintf( buf, "stoi%s, %s[%s], %04x", WidthSuffix( width ), RegOpString( op ), RegOpString( op1 ), getword( pop + 2 ) );
+                    else if ( 6 == op1funct )
+                        sprintf( buf, "stor%s, %s[%s], %s", WidthSuffix( width ), RegOpString( op ), RegOpString( op1 ), RegOpString( op2 ) );
+                    else if ( 7 == op1funct )
+                        sprintf( buf, "lsor%s, %s, %s[%s]", WidthSuffix( width ), RegOpString( op ), RegOpString( op1 ), RegOpString( op2 ) );
                 }
                 else if ( 7 == opfunct ) /* cstf r0, r1, r1REL, r2reg */
                 {

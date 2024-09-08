@@ -90,11 +90,14 @@
                         a3 cpuinfo --     ldo/ldi rzero, ... / returns rres_16 version, rtmp_16 2 ascii char ID
                 6:  value of funct in op1
                     0:   ld:           r0dst = [ address ]
-                    1:   sti:          [address ], r1 -8..7
+                    1:   sti:          [address], r1 -8..7
                     2:   math r0dst, r1src, r2src, f2Math
                     3:   cmp r0dst, r1src, r2src, f2Relation
                     4:   fzero r0index, r1address, 2-byte unsigned max count of width items. 0..65534
                              on return, r0offset is an index to an array entry with a 0 value or 1 + count
+                    5:   stoi r0address[ r1index ], 2-byte sign-extended constant
+                    6:   stor r0address[ r1index ], r2value
+                    7:   ldor r0destination, r1address[ r3index ]
                 7:  cstf               conditional stack frame store: cstf r0left r1right frame1REL reg2FRAMEOFFSET
 
         3 byte operations: high 3 bits 0..7:  ld, ldi, st, jmp, inc, dec, ldae, call
@@ -736,8 +739,8 @@ static void staddw_do()
 {
     uint16_t * pw;
     oi_t cur;
-    pw = (uint16_t *) ram_address( g_oi.rtmp + g_oi.rarg1 );
     cur = g_oi.rtmp;
+    pw = (uint16_t *) ram_address( ( sizeof( uint16_t ) * cur ) + g_oi.rarg1 );
     do
     {
         *pw = 0;
@@ -752,8 +755,8 @@ static void stadddw_do()
 {
     uint32_t * pw;
     oi_t cur;
-    pw = (uint32_t *) ram_address( g_oi.rtmp + g_oi.rarg1 );
     cur = g_oi.rtmp;
+    pw = (uint32_t *) ram_address( ( sizeof( uint32_t ) * cur ) + g_oi.rarg1 );
     do
     {
         *pw = 0;
@@ -768,8 +771,8 @@ static void staddqw_do()
 {
     uint64_t * pw;
     oi_t cur;
-    pw = (uint64_t *) ram_address( g_oi.rtmp + g_oi.rarg1 );
     cur = g_oi.rtmp;
+    pw = (uint64_t *) ram_address( ( sizeof( uint64_t ) * cur ) + g_oi.rarg1 );
     do
     {
         *pw = 0;
@@ -1110,7 +1113,7 @@ __forceinline static void op_c0_d0_do( opcode_t op )
     oi_t val;
     ioi_t ival;
     uint8_t * pb;
-    uint16_t * pw;
+    uint16_t * pw, val16;
     oi_t index, limit;
 #ifndef OI2
     uint32_t * pdw;
@@ -1182,7 +1185,7 @@ __forceinline static void op_c0_d0_do( opcode_t op )
             set_reg_from_op( op, (oi_t) CheckRelation( get_reg_from_op( op1 ), get_reg_from_op( op2 ), funct_from_op( op2 ) ) );
             break;
         }
-        default: /* case 4: fzero r0index, r1array, MAX 0..65535 */
+        case 4: /* fzero r0index, r1array, MAX 0..65535 */
         {
             /* while index < MAX, look for a 0 at each index in the array */
             limit = get_word( g_oi.rpc + 2 );
@@ -1219,6 +1222,61 @@ __forceinline static void op_c0_d0_do( opcode_t op )
 
             set_reg_from_op( op, index );
             break;
+        }
+        case 5: /* stoi r0address[ r1index ], 2-byte sign-extended constant */
+        {
+            val16 = get_word( g_oi.rpc + 2 );
+            index = (oi_t) get_reg_from_op( op1 );
+            val = get_reg_from_op( op );
+            width = width_from_op( op1 );
+            if ( 0 == width )
+                set_byte( val + index, (uint8_t) val16 );
+            else if_1_is_width
+                set_word( val + 2 * index, val16 );
+#ifndef OI2
+            else if_2_is_width
+                set_dword( val + 4 * index, (int32_t) (int16_t) val16 );
+#ifdef OI8
+            else /* 3 == width */
+                set_qword( val + 8 * index, (int64_t) (int16_t) val16 );
+#endif /* OI8 */
+#endif /* OI2 */
+        }
+        case 6: /* stor r0address[ r1index ], r2value */
+        {
+            index = (oi_t) get_reg_from_op( op1 );
+            val = get_reg_from_op( op );
+            width = width_from_op( op1 );
+            if ( 0 == width )
+                set_byte( val + index, (uint8_t) get_reg_from_op( get_op2() ) );
+            else if_1_is_width
+                set_word( val + 2 * index, (uint16_t) get_reg_from_op( get_op2() ) );
+#ifndef OI2
+            else if_2_is_width
+                set_dword( val + 4 * index, (uint32_t) get_reg_from_op( get_op2() ) );
+#ifdef OI8
+            else /* 3 == width */
+                set_qword( val + 8 * index, get_reg_from_op( get_op2() ) );
+#endif /* OI8 */
+#endif /* OI2 */
+        }
+        case 7: /* ldor r0destination, r1address[ r2index ] */
+        {
+            index = (oi_t) get_reg_from_op( get_op2() );
+            val = get_reg_from_op( op1 );
+            width = width_from_op( op1 );
+            if ( 0 == width )
+                set_reg_from_op( op, (int8_t) get_byte( val + index ) );
+            else if_1_is_width
+                set_reg_from_op( op, (int16_t) get_word( val + 2 * index ) );
+#ifndef OI2
+            else if_2_is_width
+                set_reg_from_op( op, (int32_t) get_dword( val + 4 * index ) );
+#ifdef OI8
+            else /* 3 == width */
+                set_reg_from_op( op, get_qword( val + 8 * index ) );
+#endif /* OI8 */
+#endif /* OI2 */
         }
     }
 } /* op_c0_d0_do */
@@ -1600,7 +1658,7 @@ uint32_t ExecuteOI()
                 }
                 break;
             }
-            case 0xc3: case 0xc7: case 0xcb: case 0xcf: /* ld / ldb / sti / stib / math / fzero */
+            case 0xc3: case 0xc7: case 0xcb: case 0xcf: /* ld / sti / stib / math / fzero / stoi / stor / ldor */
             case 0xd3: case 0xd7: case 0xdb: case 0xdf:
             {
                 op_c0_d0_do( op );
