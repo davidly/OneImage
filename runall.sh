@@ -34,7 +34,7 @@ test_basic_app()
 {
     ba -q -a:o -x basic/$1
     rm $1.s
-	 mv basic/$1.s .
+    mv basic/$1.s .
     test_app $1
 }
 
