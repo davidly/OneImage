@@ -10,4 +10,4 @@ Two functions in tttoi.s as compared with assembly implementations for other ISA
 
 ![counts](https://github.com/user-attachments/assets/df3ffa27-c77e-4134-b737-101e1eff5859)
 
-The manx, hisoft, and mscv6 folders contain build scripts for compiling oios with CP/M 2.2 and DOS compilers found in (cpm_compilers)[https://github.com/davidly/cpm_compilers] and (dos_compilers)[https://github.com/davidly/dos_compilers] using NTVCM and NTVDM emulators found in sister repos.
+The manx, hisoft, and mscv6 folders contain build scripts for compiling oios with CP/M 2.2 and DOS compilers found in [cpm_compilers](https://github.com/davidly/cpm_compilers) and [dos_compilers](https://github.com/davidly/dos_compilers) using NTVCM and NTVDM emulators found in sister repos.
