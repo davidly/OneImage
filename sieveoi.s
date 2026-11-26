@@ -37,6 +37,7 @@ define false 0
 define loops 10
 define arraysize 8190
 define arraysizep 8191
+define arraysizes 8192                      ; arraysizep plus a nonzero sentinel
 
 define syscall_exit           0
 define syscall_print_string   1
@@ -44,7 +45,7 @@ define syscall_print_integer  2
 
 .data
     string str_primes " primes\n"
-    byte   flags[ arraysizep ]
+    byte   flags[ arraysizes ]
     align
     image_t iters
     image_t count
@@ -60,18 +61,18 @@ start:
     st      [count], rzero
 
     ldib    rtmp, true
-    ldi     rarg2, arraysizep
+    ldi     rarg2, arraysizes               ; also set the sentinel flags[ arraysizep ]
     zero    rres
     memfb                                   ; fill memory bytes at rarg1 with value of low byte of rtmp for rarg2 bytes
 
     ; i in rframe. prime in rarg2.
     ldi     rres, arraysize                 ; leave this here for the duration
-    zero    rframe
+    ldib    rframe, -1                      ; ldoincb pre-increments i
 
+    ; phase 1: strike out multiples while the first multiple k = 3i + 3 is in the array.
   next_prime:
-;    ldorb   rtmp, rarg1[ rframe ]
-    ldob    rtmp, flags[ rframe ]
-    j       rtmp, rzero, eq, flag_is_off
+    ldoincb rtmp, flags[ rframe ]           ; i++, rtmp = flags[ i ]
+    j       rtmp, rzero, eq, next_prime
 
     ldib    rarg2, 3
     add     rarg2, rframe
@@ -79,16 +80,20 @@ start:
 
     ; k in rtmp
     math    rtmp, rframe, rarg2, add
-    j       rtmp, rres, gt, inc_count       ; redundant check to that in the kloop but this makes the loop faster
+    j       rtmp, rres, gt, count_prime     ; k > SIZE for this and every later i, so only counting is left
 
     staddb                                  ; rarg1[ rtmp ] = 0. rtmp += rarg2. repeat while rtmp <= rres.
+    inc     [count]
+    j       rzero, rzero, eq, next_prime
 
-  inc_count:
+    ; phase 2: count the remaining primes. the sentinel stops the scan at the end of the array.
+  count_prime:
     inc     [count]
 
-  flag_is_off:
-    inc     rframe
-    j       rframe, rres, le, next_prime
+  count_next:
+    ldoincb rtmp, flags[ rframe ]
+    j       rtmp, rzero, eq, count_next
+    j       rframe, rres, le, count_prime   ; i > SIZE means this is the sentinel
 
     dec     [iters]
     ld      rtmp, iters

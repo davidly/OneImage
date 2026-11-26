@@ -8,7 +8,32 @@ In short, CPUs with instruction sets similar to the one proposed will run code m
 
 Two functions in tttoi.s as compared with assembly implementations for other ISAs found [here](https://github.com/davidly/ttt)
 
-![counts](https://github.com/user-attachments/assets/df3ffa27-c77e-4134-b737-101e1eff5859)
+![counts](images/ttt_counts.svg)
+
+OneImage rows are static counts from the current tttoi.s, measured from each function's label to the next
+function's label in the `oia -l` listing at each image width.
+
+## Benchmark instruction counts
+
+Instructions executed by the assembly benchmarks. Counts are identical for
+2-, 4-, and 8-byte image widths.
+
+| benchmark   | instructions |
+|-------------|-------------:|
+| eoi.s       |      140,018 |
+| sieveoi.s   |      245,179 |
+| tttoi.s     |      185,558 |
+
+To measure counts, build an interpreter without `-DNDEBUG` and run it with `-p`:
+
+```sh
+c++ -std=c++11 -O2 -DOI2 -Wno-deprecated-declarations -I . -x c++ oios.c oi.c trace.c oidis.c -o oios2d
+./oia -w:2 sieveoi.s
+./oios2d -p sieveoi
+```
+
+Debug builds also accept `-t -i` to write a per-instruction trace to `oios.log`, which is useful
+for finding the hottest instructions.
 
 The manx, hisoft, and mscv6 folders contain build scripts for compiling oios with CP/M 2.2 and DOS compilers found in [cpm_compilers](https://github.com/davidly/cpm_compilers) and [dos_compilers](https://github.com/davidly/dos_compilers) using NTVCM and NTVDM emulators found in sister repos.
 

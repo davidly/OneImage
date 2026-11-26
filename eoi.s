@@ -74,9 +74,11 @@ start:
     stincb  [rarg1], 0
     stincb  [rarg1], 2
 
-    ; rarg2 is n. rtmp is high. rres is x
+    ; rarg2 is n. rtmp is high. rres is x. rframe holds the constant 10.
+    ; start doesn't use a frame, and ret restores rframe from the stack.
     ldi     rtmp, digits
     zero    rres
+    ldiw    rframe, 10
 
   _outerloop:
     dec     rtmp
@@ -87,16 +89,14 @@ start:
     stob    array[ rarg2 ], rres         ; a[ n ] = x MOD n
     dec     rarg2                        ; n--
     ldob    rres, array[ rarg2 ]
-    ldiw    rarg1, 10
-    imul    rres, rarg1                  ; 10 * a[ n - 1 ]
+    imul    rres, rframe                 ; 10 * a[ n - 1 ]
     mathst  rres, rres, add              ; add results of multiplication and division
     j       rarg2, rzero, ne, _innerloop
 
     mov     rarg1, rres
     syscall syscall_print_integer
 
-    ldiw    rarg1, 9
-    j       rtmp, rarg1, gt, _outerloop
+    j       rtmp, rframe, ge, _outerloop ; high > 9 is high >= 10
 
     ldi     rarg1, str_done
     syscall syscall_print_string

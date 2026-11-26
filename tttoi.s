@@ -1,7 +1,8 @@
 ; register usage:
 ;    rarg2 is a global for the depth
 ; in minmax_min and minmax_max:
-;    rarg1 is value and board for the win check functions
+;    rarg1 is value and the piece for the win check functions
+;    rres is the board for the win check functions, which return nonzero (the board) for a win and 0 otherwise
 ;    rtmp is i in the for loop 0..8
 
 define x_piece 1
@@ -153,11 +154,11 @@ minmax_max:
     inc     [move_count]
     ji      rarg2, 4, lt, _max_after_winner_check
 
-    ; rres already has o_piece
-    ldiw    rarg1, board
+    ; rres already has the board address
+    ldib    rarg1, o_piece
     callnf  procs[ rtmp ]
 
-    ji      rres, o_piece, ne, _max_after_winner_check
+    j       rres, rzero, eq, _max_after_winner_check
     ldib    rres, lose_score
     ret     2                               ; toss alpha and beta from the stack
 
@@ -177,8 +178,7 @@ minmax_max:
 ;    ldoincb rres, board[ rtmp ]
 ;    j       rres, rzero, ne, _max_loop
 
-    ldib    rres, x_piece
-    stob    board[ rtmp ], rres
+    stoib   rres[ rtmp ], x_piece           ; rres is still board from fzerob. it stays the board for the win check
 
     ; alternatively inlining tail recursion here has little measurable savings: about 1.7%
 
@@ -215,11 +215,11 @@ minmax_min:
     inc     [move_count]
     ji      rarg2, 4, lt, _min_after_winner_check
 
-    ; rres already has x_piece
-    ldiw    rarg1, board
+    ; rres already has the board address
+    ldib    rarg1, x_piece
     callnf  procs[ rtmp ]
 
-    ji      rres, x_piece, ne, _min_check_tie
+    j       rres, rzero, eq, _min_check_tie
     ldib    rres, win_score
     ret     2                               ; toss alpha and beta from the stack
 
@@ -244,8 +244,7 @@ minmax_min:
 ;    ldoincb rres, board[ rtmp ]
 ;    j       rres, rzero, ne, _min_loop
 
-    ldib    rres, o_piece
-    stob    board[ rtmp ], rres
+    stoib   rres[ rtmp ], o_piece           ; rres is still board from fzerob. it stays the board for the win check
 
     push    rarg1                           ; save value
     pushf   1                               ; push frame argument - alpha
@@ -277,108 +276,108 @@ minmax_min:
     ret     2                               ; toss alpha and beta from the stack
 
 proc0:
-    jrelb   rres, rarg1, 1, ne, _proc0_next_win
-    jrelb   rres, rarg1, 2, eq, retnf
+    jrelb   rarg1, rres, 1, ne, _proc0_next_win
+    jrelb   rarg1, rres, 2, eq, retnf
 
   _proc0_next_win:
-    jrelb   rres, rarg1, 3, ne, _proc0_next_win2
-    jrelb   rres, rarg1, 6, eq, retnf
+    jrelb   rarg1, rres, 3, ne, _proc0_next_win2
+    jrelb   rarg1, rres, 6, eq, retnf
 
  _proc0_next_win2:
-    jrelb   rres, rarg1, 4, ne, ret0nf
-    jrelb   rres, rarg1, 8, ne, ret0nf
+    jrelb   rarg1, rres, 4, ne, ret0nf
+    jrelb   rarg1, rres, 8, ne, ret0nf
     retnf
 
 proc1:
-    jrelb   rres, rarg1, 0, ne, _proc1_next_win
-    jrelb   rres, rarg1, 2, eq, retnf
+    jrelb   rarg1, rres, 0, ne, _proc1_next_win
+    jrelb   rarg1, rres, 2, eq, retnf
 
   _proc1_next_win:
-    jrelb   rres, rarg1, 4, ne, ret0nf
-    jrelb   rres, rarg1, 7, ne, ret0nf
+    jrelb   rarg1, rres, 4, ne, ret0nf
+    jrelb   rarg1, rres, 7, ne, ret0nf
     retnf
 
 proc2:
-    jrelb   rres, rarg1, 0, ne, _proc2_next_win
-    jrelb   rres, rarg1, 1, eq, retnf
+    jrelb   rarg1, rres, 0, ne, _proc2_next_win
+    jrelb   rarg1, rres, 1, eq, retnf
 
   _proc2_next_win:
-    jrelb   rres, rarg1, 5, ne, _proc2_next_win2
-    jrelb   rres, rarg1, 8, eq, retnf
+    jrelb   rarg1, rres, 5, ne, _proc2_next_win2
+    jrelb   rarg1, rres, 8, eq, retnf
 
  _proc2_next_win2:
-    jrelb   rres, rarg1, 4, ne, ret0nf
-    jrelb   rres, rarg1, 6, ne, ret0nf
+    jrelb   rarg1, rres, 4, ne, ret0nf
+    jrelb   rarg1, rres, 6, ne, ret0nf
     retnf
 
 proc3:
-    jrelb   rres, rarg1, 0, ne, _proc3_next_win
-    jrelb   rres, rarg1, 6, eq, retnf
+    jrelb   rarg1, rres, 0, ne, _proc3_next_win
+    jrelb   rarg1, rres, 6, eq, retnf
 
   _proc3_next_win:
-    jrelb   rres, rarg1, 4, ne, ret0nf
-    jrelb   rres, rarg1, 5, ne, ret0nf
+    jrelb   rarg1, rres, 4, ne, ret0nf
+    jrelb   rarg1, rres, 5, ne, ret0nf
     retnf
 
 proc4:
-    jrelb   rres, rarg1, 0, ne, _proc4_next_win
-    jrelb   rres, rarg1, 8, eq, retnf
+    jrelb   rarg1, rres, 0, ne, _proc4_next_win
+    jrelb   rarg1, rres, 8, eq, retnf
 
   _proc4_next_win:
-    jrelb   rres, rarg1, 2, ne, _proc4_next_win2
-    jrelb   rres, rarg1, 6, eq, retnf
+    jrelb   rarg1, rres, 2, ne, _proc4_next_win2
+    jrelb   rarg1, rres, 6, eq, retnf
 
   _proc4_next_win2:
-    jrelb   rres, rarg1, 1, ne, _proc4_next_win3
-    jrelb   rres, rarg1, 7, eq, retnf
+    jrelb   rarg1, rres, 1, ne, _proc4_next_win3
+    jrelb   rarg1, rres, 7, eq, retnf
 
  _proc4_next_win3:
-    jrelb   rres, rarg1, 3, ne, ret0nf
-    jrelb   rres, rarg1, 5, ne, ret0nf
+    jrelb   rarg1, rres, 3, ne, ret0nf
+    jrelb   rarg1, rres, 5, ne, ret0nf
     retnf
 
 proc5:
-    jrelb   rres, rarg1, 3, ne, _proc5_next_win
-    jrelb   rres, rarg1, 4, eq, retnf
+    jrelb   rarg1, rres, 3, ne, _proc5_next_win
+    jrelb   rarg1, rres, 4, eq, retnf
 
   _proc5_next_win:
-    jrelb   rres, rarg1, 2, ne, ret0nf
-    jrelb   rres, rarg1, 8, ne, ret0nf
+    jrelb   rarg1, rres, 2, ne, ret0nf
+    jrelb   rarg1, rres, 8, ne, ret0nf
     retnf
 
 proc6:
-    jrelb   rres, rarg1, 2, ne, _proc6_next_win
-    jrelb   rres, rarg1, 4, eq, retnf
+    jrelb   rarg1, rres, 2, ne, _proc6_next_win
+    jrelb   rarg1, rres, 4, eq, retnf
 
   _proc6_next_win:
-    jrelb   rres, rarg1, 0, ne, _proc6_next_win2
-    jrelb   rres, rarg1, 3, eq, retnf
+    jrelb   rarg1, rres, 0, ne, _proc6_next_win2
+    jrelb   rarg1, rres, 3, eq, retnf
 
  _proc6_next_win2:
-    jrelb   rres, rarg1, 7, ne, ret0nf
-    jrelb   rres, rarg1, 8, ne, ret0nf
+    jrelb   rarg1, rres, 7, ne, ret0nf
+    jrelb   rarg1, rres, 8, ne, ret0nf
     retnf
 
 proc7:
-    jrelb   rres, rarg1, 1, ne, _proc7_next_win
-    jrelb   rres, rarg1, 4, eq, retnf
+    jrelb   rarg1, rres, 1, ne, _proc7_next_win
+    jrelb   rarg1, rres, 4, eq, retnf
 
   _proc7_next_win:
-    jrelb   rres, rarg1, 6, ne, ret0nf
-    jrelb   rres, rarg1, 8, ne, ret0nf
+    jrelb   rarg1, rres, 6, ne, ret0nf
+    jrelb   rarg1, rres, 8, ne, ret0nf
     retnf
 
 proc8:
-    jrelb   rres, rarg1, 0, ne, _proc8_next_win
-    jrelb   rres, rarg1, 4, eq, retnf
+    jrelb   rarg1, rres, 0, ne, _proc8_next_win
+    jrelb   rarg1, rres, 4, eq, retnf
 
   _proc8_next_win:
-    jrelb   rres, rarg1, 2, ne, _proc8_next_win2
-    jrelb   rres, rarg1, 5, eq, retnf
+    jrelb   rarg1, rres, 2, ne, _proc8_next_win2
+    jrelb   rarg1, rres, 5, eq, retnf
 
  _proc8_next_win2:
-    jrelb   rres, rarg1, 6, ne, ret0nf
-    jrelb   rres, rarg1, 7, ne, ret0nf
+    jrelb   rarg1, rres, 6, ne, ret0nf
+    jrelb   rarg1, rres, 7, ne, ret0nf
     retnf
 
 .codeend
