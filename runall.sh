@@ -3,7 +3,10 @@
 outputfile="test_oios.txt"
 echo $(date) >$outputfile
 
-declare -a _applist=( sieveoi eoi tttoi testoi )
+declare -a _applist=(
+    sieveoi eoi tttoi testoi
+    tests/isa_arithmetic tests/isa_relations tests/isa_memory
+)
 declare -a _basiclist=( e sieve ttt tp texp tcpm tfor tcomp tgosub tmul test tparen tneg tneg1 ta2dim )
 
 test_app()
