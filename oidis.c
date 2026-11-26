@@ -93,7 +93,7 @@ static uint16_t getword( pop ) uint8_t * pop;
 static uint16_t getword( uint8_t * pop )
 #endif
 {
-    return * (uint16_t *) pop;
+    return ((uint16_t) pop[0] << 0) | ((uint16_t) pop[1] << 8);
 } /* getword */
 
 #ifdef OLDCPU
@@ -102,7 +102,7 @@ static uint32_t getdword( pop ) uint8_t * pop;
 static uint32_t getdword( uint8_t * pop )
 #endif
 {
-    return * (uint32_t *) pop;
+    return ((uint32_t) pop[0] << 0) | ((uint32_t) pop[1] << 8) | ((uint32_t) pop[2] << 16) | ((uint32_t) pop[3] << 24);
 } /* getword */
 
 #ifndef MSC6
@@ -110,7 +110,7 @@ static uint32_t getdword( uint8_t * pop )
 
 static uint64_t getqword( uint8_t * pop )
 {
-    return * (uint64_t *) pop;
+    return ((uint64_t) pop[0] << 0) | ((uint64_t) pop[1] << 8) | ((uint64_t) pop[2] << 16) | ((uint64_t) pop[3] << 24) | ((uint64_t) pop[4] << 32) | ((uint64_t) pop[5] << 40) | ((uint64_t) pop[6] << 48) | ((uint64_t) pop[7] << 56);
 } /* getqword */
 
 #endif
@@ -289,7 +289,7 @@ const char * DisassembleOI( uint8_t * pop, oi_t rpc, uint8_t image_width )
                 else if ( 0x60 == opOperation )
                 {
                     width = (uint8_t) width_from_op( op1 );
-                    offset = (int16_t) reg_from_op( op1 );
+                    offset = (int16_t) sign_extend_oi( reg_from_op( op1 ), 2 );
                     op1funct = funct_from_op( op1 );
 
                     if ( 0 == op1funct ) /* ldf rdst, offset ( -4..3 ) */
@@ -312,7 +312,7 @@ const char * DisassembleOI( uint8_t * pop, oi_t rpc, uint8_t image_width )
                 }
                 else if ( 0x80 == opOperation )
                 {
-                    offset = (int16_t) reg_from_op( op1 );
+                    offset = (int16_t) sign_extend_oi( reg_from_op( op1 ), 2 );
                     op1funct = (uint8_t) funct_from_op( op1 );
                     width = (uint8_t) width_from_op( op1 );
 
@@ -502,14 +502,14 @@ const char * DisassembleOI( uint8_t * pop, oi_t rpc, uint8_t image_width )
                     else if ( 5 == op1funct )
                         sprintf( buf, "stoi%s, %s[%s], %04x", WidthSuffix( width ), RegOpString( op ), RegOpString( op1 ), getword( pop + 2 ) );
                     else if ( 6 == op1funct )
-                        sprintf( buf, "stor%s, %s[%s], %s", WidthSuffix( width ), RegOpString( op ), RegOpString( op1 ), RegOpString( op2 ) );
+                        sprintf( buf, "stor%s %s[%s], %s", WidthSuffix( width ), RegOpString( op ), RegOpString( op1 ), RegOpString( op2 ) );
                     else if ( 7 == op1funct )
-                        sprintf( buf, "lsor%s, %s, %s[%s]", WidthSuffix( width ), RegOpString( op ), RegOpString( op1 ), RegOpString( op2 ) );
+                        sprintf( buf, "ldor%s %s, %s[%s]", WidthSuffix( width ), RegOpString( op ), RegOpString( op1 ), RegOpString( op2 ) );
                 }
                 else if ( 7 == opfunct ) /* cstf r0, r1, r1REL, r2reg */
                 {
                     sprintf( buf, "cstf %s, %s, %s, %d", RegOpString( op ), RegOpString( op1 ),
-                             RelationString( funct_from_op( op1 ) ),  (int16_t) reg_from_op( op2 ) );
+                             RelationString( funct_from_op( op1 ) ),  (int16_t) sign_extend_oi( reg_from_op( op2 ), 2 ) );
                 }
             }
         }

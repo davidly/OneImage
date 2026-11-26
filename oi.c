@@ -282,8 +282,8 @@ void TraceInstructionsOI( bool t )
 /* these macros lose safety and readability over inlined functions, but older compilers can't inline functions */
 
 #ifdef OI2
-#define access_ram( address ) ( ram[ address ] )
-#define ram_address( address ) ( ram + ( address ) )
+#define access_ram( address ) ( ram[ (oi_t) ( address ) ] )
+#define ram_address( address ) ( ram + (oi_t) ( address ) )
 #define IMAGE_WIDTH 2
 #else
 #define access_ram( address ) ( ram[ ( address ) & g_oi.address_mask ] )
@@ -294,26 +294,109 @@ void TraceInstructionsOI( bool t )
 #define get_byte( address ) ( access_ram( address ) )
 #define set_byte( address, val ) ( access_ram( address ) = val )
 
-#define get_word( address ) ( * (uint16_t *) ( ram_address( address ) ) )
-#define set_word( address, val ) ( * (uint16_t *) ( ram_address( address ) ) = val )
-
-#define get_oiword( address ) ( * (oi_t *) ( ram_address( address ) ) )
-#define set_oiword( address, val ) ( * (oi_t *) ( ram_address( address ) ) = val )
-
-#ifdef OI4
-/* no mask required */
-#define get_dword( address ) ( * (uint32_t *) ( ram + address ) )
-#define set_dword( address, val ) ( * (uint32_t *) ( ram + address ) = val )
+/* Bytecode and data need not be aligned; transfers are little-endian. */
+#ifdef OLDCPU
+static uint16_t read_word( address ) oi_t address;
 #else
-#define get_dword( address ) ( * (uint32_t *) ( ram_address( address ) ) )
-#define set_dword( address, val ) ( * (uint32_t *) ( ram_address( address ) ) = val )
-#endif /* OI4 */
-
+static uint16_t read_word( oi_t address )
+#endif
+{
+    uint16_t value;
+    uint8_t i;
+    value = 0;
+    for ( i = 0; i < 2; i++ )
+        value |= ( ( (uint16_t) get_byte( address + i ) ) << ( 8 * i ) );
+    return value;
+}
+#ifdef OLDCPU
+static void write_word( address, value ) oi_t address; uint16_t value;
+#else
+static void write_word( oi_t address, uint16_t value )
+#endif
+{
+    uint8_t i;
+    for ( i = 0; i < 2; i++ )
+    {
+        set_byte( address + i, (uint8_t) value );
+        value >>= 8;
+    }
+}
+#define get_word read_word
+#define set_word write_word
+#ifndef OI2
+#ifdef OLDCPU
+static uint32_t read_dword( address ) oi_t address;
+#else
+static uint32_t read_dword( oi_t address )
+#endif
+{
+    uint32_t value;
+    uint8_t i;
+    value = 0;
+    for ( i = 0; i < 4; i++ )
+        value |= ( ( (uint32_t) get_byte( address + i ) ) << ( 8 * i ) );
+    return value;
+}
+#ifdef OLDCPU
+static void write_dword( address, value ) oi_t address; uint32_t value;
+#else
+static void write_dword( oi_t address, uint32_t value )
+#endif
+{
+    uint8_t i;
+    for ( i = 0; i < 4; i++ )
+    {
+        set_byte( address + i, (uint8_t) value );
+        value >>= 8;
+    }
+}
+#define get_dword read_dword
+#define set_dword write_dword
+#endif
 #ifdef OI8
-/* no mask required */
-#define get_qword( address ) ( * (uint64_t *) ( ram + address ) )
-#define set_qword( address, val ) ( * (uint64_t *) ( ram + address ) = val )
-#endif /* OI8 */
+#ifdef OLDCPU
+static uint64_t read_qword( address ) oi_t address;
+#else
+static uint64_t read_qword( oi_t address )
+#endif
+{
+    uint64_t value;
+    uint8_t i;
+    value = 0;
+    for ( i = 0; i < 8; i++ )
+        value |= ( ( (uint64_t) get_byte( address + i ) ) << ( 8 * i ) );
+    return value;
+}
+#ifdef OLDCPU
+static void write_qword( address, value ) oi_t address; uint64_t value;
+#else
+static void write_qword( oi_t address, uint64_t value )
+#endif
+{
+    uint8_t i;
+    for ( i = 0; i < 8; i++ )
+    {
+        set_byte( address + i, (uint8_t) value );
+        value >>= 8;
+    }
+}
+#define get_qword read_qword
+#define set_qword write_qword
+#endif
+#ifdef OI2
+#define get_oiword get_word
+#define set_oiword set_word
+#define image_value( value ) ( (oi_t) ( value ) )
+#else
+#ifdef OI4
+#define get_oiword get_dword
+#define set_oiword set_dword
+#else
+#define get_oiword get_qword
+#define set_oiword set_qword
+#endif
+#define image_value( value ) ( (oi_t) ( ( value ) & g_oi.address_mask ) )
+#endif
 
 #ifdef OI8
 #define get_preg_from_op( op ) ( (oi_t *) ( ( (uint8_t *) & g_oi.rzero ) + ( ( op << 1 ) & 0x38 ) ) )
@@ -324,10 +407,10 @@ void TraceInstructionsOI( bool t )
 #define get_reg_from_op( op ) ( * get_preg_from_op( op ) )
 #define set_reg_from_op( op, val ) ( * get_preg_from_op( op ) = val )
 
-#define add_reg_from_op( op, val ) ( ( * get_preg_from_op( op ) ) += val )
+#define add_reg_from_op( op, val ) set_reg_from_op( op, image_value( get_reg_from_op( op ) + (val) ) )
 
-#define inc_reg_from_op( op ) ( ( * get_preg_from_op( op ) )++ )
-#define dec_reg_from_op( op ) ( ( * get_preg_from_op( op ) )-- )
+#define inc_reg_from_op( op ) set_reg_from_op( op, image_value( get_reg_from_op( op ) + 1 ) )
+#define dec_reg_from_op( op ) set_reg_from_op( op, image_value( get_reg_from_op( op ) - 1 ) )
 
 #define get_op() ( get_byte( g_oi.rpc ) )
 #define get_op1() ( get_byte( g_oi.rpc + 1 ) )
@@ -560,18 +643,54 @@ static bool CheckRelation( ioi_t l, ioi_t r, uint8_t relation )
 } /* CheckRelation */
 
 #ifdef OLDCPU
+static ioi_t signed_image_value( value ) oi_t value;
+#else
+static ioi_t signed_image_value( oi_t value )
+#endif
+{
+    if ( 2 == IMAGE_WIDTH )
+        return (int16_t) value;
+#ifndef OI2
+    if ( 4 == IMAGE_WIDTH )
+        return (int32_t) value;
+#endif
+    return (ioi_t) value;
+}
+
+#ifdef OLDCPU
 static oi_t Math( l, r, math ) oi_t l; oi_t r; uint8_t math;
 #else
 static oi_t Math( oi_t l, oi_t r, uint8_t math )
 #endif
 {
+    ioi_t left, right;
     __assume( math <= 7 );
+    l = image_value( l );
+    r = image_value( r );
     switch ( math )
     {
-        case 0: { return l + r; }
-        case 1: { return l - r; }
-        case 2: { return (ioi_t) l * (ioi_t) r; }
-        case 3: { return (ioi_t) l / (ioi_t) r; }
+        case 0: { return image_value( l + r ); }
+        case 1: { return image_value( l - r ); }
+        case 2:
+        {
+#ifdef OI2
+            return (oi_t) ( (uint32_t) l * (uint32_t) r );
+#else
+            return image_value( l * r );
+#endif
+        }
+        case 3:
+        {
+            left = signed_image_value( l );
+            right = signed_image_value( r );
+            if ( 0 == right )
+                return 0;
+            /* Avoid host signed overflow for MIN / -1; the ISA wraps. */
+            if ( (ioi_t) -1 == right &&
+                 left == signed_image_value( (oi_t) 1 << ( 8 * IMAGE_WIDTH - 1 ) ) )
+                return l;
+            return image_value( (oi_t) ( left / right ) );
+        }
         case 4: { return l | r; }
         case 5: { return l ^ r; }
         case 6: { return l & r; }
@@ -682,39 +801,45 @@ static void memfb_do()
 
 static void memfw_do()
 {
-    uint16_t * pw, * pbeyond, val;
-    pw = (uint16_t *) ram_address( g_oi.rarg1 );
-    pw += g_oi.rres;
-    pbeyond = pw + g_oi.rarg2;
-    val = (uint16_t) g_oi.rtmp;
-    while ( pw != pbeyond )
-        *pw++ = val;
+    oi_t address, count;
+    address = g_oi.rarg1 + 2 * g_oi.rres;
+    count = g_oi.rarg2;
+    while ( count )
+    {
+        set_word( address, (uint16_t) g_oi.rtmp );
+        address += 2;
+        count--;
+    }
 } /* memfw_do */
 
 #ifndef OI2
 
 static void memfdw_do()
 {
-    uint32_t * p, * pbeyond, val;
-    p = (uint32_t *) ram_address( g_oi.rarg1 );
-    p += g_oi.rres;
-    pbeyond = p + g_oi.rarg2;
-    val = (uint32_t) g_oi.rtmp;
-    while ( p != pbeyond )
-        *p++ = val;
+    oi_t address, count;
+    address = g_oi.rarg1 + 4 * g_oi.rres;
+    count = g_oi.rarg2;
+    while ( count )
+    {
+        set_dword( address, (uint32_t) g_oi.rtmp );
+        address += 4;
+        count--;
+    }
 } /* memfdw_do */
 
 #ifdef OI8
 
 static void memfqw_do()
 {
-    uint64_t * p, * pbeyond, val;
-    p = (uint64_t *) ram_address( g_oi.rarg1 );
-    p += g_oi.rres;
-    pbeyond = p + g_oi.rarg2;
-    val = g_oi.rtmp;
-    while ( p != pbeyond )
-        *p++ = val;
+    oi_t address, count;
+    address = g_oi.rarg1 + 8 * g_oi.rres;
+    count = g_oi.rarg2;
+    while ( count )
+    {
+        set_qword( address, (uint64_t) g_oi.rtmp );
+        address += 8;
+        count--;
+    }
 } /* memfqw_do */
 
 #endif /* OI8 */
@@ -722,29 +847,22 @@ static void memfqw_do()
 
 static void staddb_do()
 {
-    uint8_t * pb, * pend;
-    oi_t tadd;
-    pb = ram_address( g_oi.rtmp + g_oi.rarg1 );
-    pend = pb + ( g_oi.rres - g_oi.rtmp );
-    tadd = g_oi.rarg2;
-
+    oi_t cur;
+    cur = g_oi.rtmp;
     do
     {
-        *pb = 0;
-        pb += tadd;
-    } while ( pb <= pend );
+        set_byte( g_oi.rarg1 + 1 * cur, 0 );
+        cur += g_oi.rarg2;
+    } while ( cur <= g_oi.rres );
 } /* staddb_do */
 
 static void staddw_do()
 {
-    uint16_t * pw;
     oi_t cur;
     cur = g_oi.rtmp;
-    pw = (uint16_t *) ram_address( ( sizeof( uint16_t ) * cur ) + g_oi.rarg1 );
     do
     {
-        *pw = 0;
-        pw += g_oi.rarg2;
+        set_word( g_oi.rarg1 + 2 * cur, 0 );
         cur += g_oi.rarg2;
     } while ( cur <= g_oi.rres );
 } /* staddw_do */
@@ -753,14 +871,11 @@ static void staddw_do()
 
 static void stadddw_do()
 {
-    uint32_t * pw;
     oi_t cur;
     cur = g_oi.rtmp;
-    pw = (uint32_t *) ram_address( ( sizeof( uint32_t ) * cur ) + g_oi.rarg1 );
     do
     {
-        *pw = 0;
-        pw += g_oi.rarg2;
+        set_dword( g_oi.rarg1 + 4 * cur, 0 );
         cur += g_oi.rarg2;
     } while ( cur <= g_oi.rres );
 } /* stadddw_do */
@@ -769,14 +884,11 @@ static void stadddw_do()
 
 static void staddqw_do()
 {
-    uint64_t * pw;
     oi_t cur;
     cur = g_oi.rtmp;
-    pw = (uint64_t *) ram_address( ( sizeof( uint64_t ) * cur ) + g_oi.rarg1 );
     do
     {
-        *pw = 0;
-        pw += g_oi.rarg2;
+        set_qword( g_oi.rarg1 + 8 * cur, 0 );
         cur += g_oi.rarg2;
     } while ( cur <= g_oi.rres );
 } /* staddqw_do */
@@ -791,14 +903,14 @@ __forceinline static void moddiv_do( size_t op, size_t op1 )
 #endif
 {
     oi_t x, y;
-    y = get_reg_from_op( op1 );
+    y = image_value( get_reg_from_op( op1 ) );
     if ( (oi_t) 0 == y )
     {
         push( 0 ); /* when they exist, an exception should be raised */
         return;
     }
 
-    x = get_reg_from_op( op );
+    x = image_value( get_reg_from_op( op ) );
     set_reg_from_op( op, x % y );
     push( x / y );
 } /* moddiv_do */
@@ -824,7 +936,7 @@ __forceinline void cstf_do( opcode_t op )
     val = get_reg_from_op( op );
     op1 = get_op1();
     if ( CheckRelation( val, get_reg_from_op( op1 ), funct_from_op( op1 ) ) )
-        set_oiword( frame_offset( (ioi_t) reg_from_op( get_byte( g_oi.rpc + 2 ) ) ), val );
+        set_oiword( frame_offset( (ioi_t) sign_extend_oi( reg_from_op( get_byte( g_oi.rpc + 2 ) ), 2 ) ), val );
 } /* cstf_do */
 
 #ifdef OLDCPU
@@ -976,7 +1088,7 @@ __forceinline static bool op_80_90_do( opcode_t op )
         }
         case 1: /* pushf offset */
         {
-            push( get_oiword( frame_offset( (int16_t) reg_from_op( op1 ) ) ) );
+            push( get_oiword( frame_offset( (ioi_t) sign_extend_oi( reg_from_op( op1 ), 2 ) ) ) );
             break;
         }
         case 2: /* stst [reg0] */
@@ -1112,13 +1224,10 @@ __forceinline static void op_c0_d0_do( opcode_t op )
     opcode_t op1, op2, width;
     oi_t val;
     ioi_t ival;
-    uint8_t * pb;
-    uint16_t * pw, val16;
-    oi_t index, limit;
+    uint16_t val16;
+    oi_t index, limit, item;
 #ifndef OI2
-    uint32_t * pdw;
 #ifdef OI8
-    uint64_t * pqw;
 #endif /* OI8 */
 #endif /* OI2 */
 
@@ -1185,41 +1294,30 @@ __forceinline static void op_c0_d0_do( opcode_t op )
             set_reg_from_op( op, (oi_t) CheckRelation( get_reg_from_op( op1 ), get_reg_from_op( op2 ), funct_from_op( op2 ) ) );
             break;
         }
-        case 4: /* fzero r0index, r1array, MAX 0..65535 */
+        case 4: /* fzero: preserve the caller's index and exclusive limit */
         {
-            /* while index < MAX, look for a 0 at each index in the array */
             limit = get_word( g_oi.rpc + 2 );
-            index = (oi_t) get_reg_from_op( op );
+            index = get_reg_from_op( op );
+            val = get_reg_from_op( op1 );
             width = width_from_op( op1 );
-            if ( 0 == width )
+            while ( index < limit )
             {
-                pb = ram_address( get_reg_from_op( op1 ) );
-                while ( ( index < limit ) && ( 0 != pb[ index ] ) )
-                    index++;
-            }
-            else if_1_is_width
-            {
-                pw = (uint16_t *) ram_address( get_reg_from_op( op1 ) );
-                while ( ( index < limit ) && ( 0 != pw[ index ] ) )
-                    index++;
-            }
+                if ( 0 == width )
+                    item = get_byte( val + index );
+                else if_1_is_width
+                    item = get_word( val + 2 * index );
 #ifndef OI2
-            else if_2_is_width
-            {
-                pdw = (uint32_t *) ram_address( get_reg_from_op( op1 ) );
-                while ( ( index < limit ) && ( (uint32_t) 0 != pdw[ index ] ) )
-                    index++;
-            }
+                else if_2_is_width
+                    item = get_dword( val + 4 * index );
 #ifdef OI8
-            else /* 3 == width */
-            {
-                pqw = (uint64_t *) ram_address( get_reg_from_op( op1 ) );
-                while ( ( index < limit ) && ( 0 != pqw[ index ] ) )
-                    index++;
+                else
+                    item = get_qword( val + 8 * index );
+#endif
+#endif
+                if ( 0 == item )
+                    break;
+                index++;
             }
-#endif /* OI8 */
-#endif /* OI2 */
-
             set_reg_from_op( op, index );
             break;
         }
@@ -1331,7 +1429,7 @@ uint32_t ExecuteOI()
             case 0x20: /* imulst */
             {
                 pop( val );
-                g_oi.rres = (ioi_t) val * (ioi_t) g_oi.rres;
+                g_oi.rres = Math( val, g_oi.rres, 2 );
                 break;
             }
             case 0x24: case 0x2c: case 0x30: case 0x34: case 0x38: case 0x3c: /* dec r */
@@ -1341,7 +1439,7 @@ uint32_t ExecuteOI()
             }
             case 0x28: /* shlimg */
             {
-                g_oi.rres <<= g_oi.image_shift;
+                g_oi.rres = image_value( g_oi.rres << g_oi.image_shift );
                 break;
             }
             case 0x40: case 0x44: case 0x4c: case 0x50: case 0x54: case 0x58: case 0x5c: /* push r */
@@ -1374,7 +1472,7 @@ uint32_t ExecuteOI()
             case 0x80: /* subst */
             {
                 pop( val );
-                g_oi.rres = val - g_oi.rres;
+                g_oi.rres = image_value( val - g_oi.rres );
                 break;
             }
             case 0x84: /* imgwid */
@@ -1389,24 +1487,24 @@ uint32_t ExecuteOI()
             }
             case 0x88: /* shrimg */
             {
-                g_oi.rres >>= g_oi.image_shift;
+                g_oi.rres = image_value( g_oi.rres ) >> g_oi.image_shift;
                 break;
             }
             case 0xa0: /* addst */
             {
                 pop( val );
-                g_oi.rres += val;
+                g_oi.rres = image_value( g_oi.rres + val );
                 break;
             }
             case 0xac: case 0xb0: case 0xb4: case 0xb8: case 0xbc: /* shl r */
             {
-                set_reg_from_op( op, get_reg_from_op( op ) << 1 );
+                set_reg_from_op( op, image_value( get_reg_from_op( op ) << 1 ) );
                 break;
             }
             case 0xa8: /* idivst */
             {
                 pop( val );
-                g_oi.rres = (ioi_t) val / (ioi_t) g_oi.rres;
+                g_oi.rres = Math( val, g_oi.rres, 3 );
                 break;
             }
             case 0xc0: /* ret */
@@ -1422,18 +1520,18 @@ uint32_t ExecuteOI()
             }
             case 0xcc: case 0xd0: case 0xd4: case 0xd8: case 0xdc: /* shr r */
             {
-                set_reg_from_op( op, get_reg_from_op( op ) >> 1 );
+                set_reg_from_op( op, image_value( get_reg_from_op( op ) ) >> 1 );
                 break;
             }
             case 0xec: case 0xf0: case 0xf4: case 0xf8: case 0xfc: /* inv r */
             {
-                set_reg_from_op( op, ! get_reg_from_op( op ) );
+                set_reg_from_op( op, ! image_value( get_reg_from_op( op ) ) );
                 break;
             }
             case 0xe0: /* andst */
             {
                 pop( val );
-                g_oi.rres &= val;
+                g_oi.rres = image_value( g_oi.rres & val );
                 break;
             }
             case 0x06: case 0x0a: case 0x0e: /* ld r, [address] */
@@ -1463,35 +1561,15 @@ uint32_t ExecuteOI()
             case 0x82: case 0x86: case 0x8a: case 0x8e: /* inc [address] */
             case 0x92: case 0x96: case 0x9a: case 0x9e:
             {
-#ifdef OI2
-                ( * (oi_t *) ( ram_address( read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op ) ) ) )++;
-#else
-                if ( 2 == g_oi.image_width )
-                    ( * (uint16_t *) ( ram_address( read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op ) ) ) )++;
-                else if ( 4 == g_oi.image_width )
-                    ( * (uint32_t *) ( ram_address( read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op ) ) ) )++;
-#ifdef OI8
-                else if ( 8 == g_oi.image_width )
-                    ( * (uint64_t *) ( ram_address( read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op ) ) ) )++;
-#endif /* OI8 */
-#endif /* OI2 */
+                val = read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op );
+                write_imgword( val, read_imgword( val ) + 1 );
                 break;
             }
             case 0xa2: case 0xa6: case 0xaa: case 0xae: /* dec [address] */
             case 0xb2: case 0xb6: case 0xba: case 0xbe: 
             {
-#ifdef OI2
-                ( * (oi_t *) ( ram_address( read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op ) ) ) )--;
-#else
-                if ( 2 == g_oi.image_width )
-                    ( * (uint16_t *) ( ram_address( read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op ) ) ) )--;
-                else if ( 4 == g_oi.image_width )
-                    ( * (uint32_t *) ( ram_address( read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op ) ) ) )--;
-#ifdef OI8
-                else if ( 8 == g_oi.image_width )
-                    ( * (uint64_t *) ( ram_address( read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op ) ) ) )--;
-#endif /* OI8 */
-#endif /* OI2 */
+                val = read_imgword( g_oi.rpc + 1 ) + get_reg_from_op( op );
+                write_imgword( val, read_imgword( val ) - 1 );
                 break;
             }
             case 0xc2: case 0xc6: case 0xca: case 0xce: /* ldae rres (implied), address[ r ] */
@@ -1703,12 +1781,12 @@ uint32_t ExecuteOI()
                 {
                     case 0: /* ldf rdst, offset ( -4..3 ) */
                     {
-                        set_reg_from_op( op, get_oiword( frame_offset( ( (int16_t) reg_from_op( op1 ) ) ) ) );
+                        set_reg_from_op( op, get_oiword( frame_offset( (ioi_t) sign_extend_oi( reg_from_op( op1 ), 2 ) ) ) );
                         break;
                     }
                     case 1: /* stf rdst, offset ( -4..3 ) */
                     {
-                        set_oiword( frame_offset( (int16_t) reg_from_op( op1 ) ), get_reg_from_op( op ) );
+                        set_oiword( frame_offset( (ioi_t) sign_extend_oi( reg_from_op( op1 ), 2 ) ), get_reg_from_op( op ) );
                         break;
                     }
                     case 2: /* ret x */

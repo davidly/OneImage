@@ -41,7 +41,7 @@ uint8_t g_byte_len = 0;
 #define false 0
 #define MAX_LABELS 1000
 #define MAX_LINE_LEN 200
-#define MAX_TOKEN_LEN 80
+#define MAX_TOKEN_LEN MAX_LINE_LEN
 #define MAX_TOKENS_PER_LINE 8
 
 enum TokenTypes
@@ -59,7 +59,7 @@ enum TokenTypes
     T_MOV, T_CMOV, T_RET, T_RET0, T_RETNF, T_RET0NF, T_INV,
     T_CSTF, T_MATHST, T_MATH, T_PLUS, T_IMGWID, T_ADDIMGW, T_SUBIMGW, T_ADDNATW, T_SUBNATW, T_NATWID,
     T_SIGNEXB, T_SIGNEXW, T_SIGNEXDW, T_SWAP,
-    T_FZERO, T_FZEROB, T_CPUINFO, T_CALLNF, T_CALL
+    T_FZERO, T_FZEROB, T_CPUINFO, T_CALLNF, T_STOI, T_STOR, T_LDOR, T_STADD, T_ANDST, T_HALT, T_CALL
 };
 
 static const char * TokenSet[] =
@@ -77,7 +77,7 @@ static const char * TokenSet[] =
     "MOV", "CMOV", "RET", "RET0", "RETNF", "RET0NF", "INV",
     "CSTF", "MATHST", "MATH", "+", "IMGWID", "ADDIMGW", "SUBIMGW", "ADDNATW", "SUBNATW", "NATWID",
     "SIGNEXB", "SIGNEXW", "SIGNEXDW", "SWAP",
-    "FZERO", "FZEROB", "CPUINFO", "CALLNF", "CALL"
+    "FZERO", "FZEROB", "CPUINFO", "CALLNF", "STOI", "STOR", "LDOR", "STADD", "ANDST", "HALT", "CALL"
 };
 
 bool is_reg( size_t t ) { return ( t >= T_RZERO && t <= T_RTMP ); }
@@ -119,9 +119,8 @@ static width_t offsets[ 2000 ];
 uint8_t compose_op( uint16_t f, uint16_t r, uint16_t w )
 {
     assert( f <= 7 );
-    assert( r <= 7 );
     assert( w <= 3 );
-    return (uint8_t) ( ( f << 5 ) | ( r << 2 ) | w );
+    return (uint8_t) ( ( f << 5 ) | ( ( r & 7 ) << 2 ) | w );
 } /* compose_op */
 
 void show_error( const char * p )
@@ -129,6 +128,38 @@ void show_error( const char * p )
     printf( "error: %s on line %d: %s\n", p, (int) line, original_line );
     exit( 1 );
 } /* show_error */
+
+/* All writes to the fixed image buffer pass through these bounds. */
+void check_code_space( width_t offset, width_t count )
+{
+    if ( offset > sizeof( code ) || count > sizeof( code ) - offset )
+        show_error( "image exceeds assembler capacity" );
+}
+
+void emit_byte( width_t * offset, uint8_t value )
+{
+    check_code_space( *offset, 1 );
+    code[ (*offset)++ ] = value;
+}
+
+void strip_comment( char * text )
+{
+    int quoted;
+    quoted = 0;
+    while ( *text )
+    {
+        if ( '\\' == *text && text[1] && quoted )
+            text++;
+        else if ( '"' == *text )
+            quoted = !quoted;
+        else if ( ';' == *text && !quoted )
+        {
+            *text = 0;
+            break;
+        }
+        text++;
+    }
+}
 
 void print_space( FILE * fp, size_t len )
 {
@@ -405,6 +436,8 @@ int tokenize( char * p )
             if ( !pnext )
                 show_error( "string has no termination" );
 
+            if ( (size_t) ( pnext - p - 1 ) >= sizeof( tokens[ c ] ) )
+                show_error( "string token is too long" );
             memcpy( tokens[ c ], p + 1, pnext - p - 1 );
             tokens[ c ][ pnext - p - 1 ] = 0;
             unescape( tokens[ c ] );
@@ -413,8 +446,14 @@ int tokenize( char * p )
             continue;
         }
 
+        if ( !is_token( *p ) )
+            show_error( "invalid character in source" );
         while ( is_token( *p ) )
+        {
+            if ( i >= MAX_TOKEN_LEN - 1 )
+                show_error( "token is too long" );
             tokens[ c ][ i++ ] = *p++;
+        }
         while ( is_blank( *p ) )
             p++;
 
@@ -422,6 +461,8 @@ int tokenize( char * p )
         c++;
         i = 0;
     }
+    if ( *p )
+        show_error( "too many tokens on source line" );
     return c;
 } /* tokenize */
 
@@ -517,8 +558,13 @@ void initialie_image_value( pcode, value ) width_t * pcode; width_t value;
 void initialize_image_value( width_t * pcode, width_t value )
 #endif
 {
-    memcpy( code + ( * pcode ), &value, g_image_width );
-    *pcode += g_image_width;
+    uint8_t i;
+    check_code_space( *pcode, g_image_width );
+    for ( i = 0; i < g_image_width; i++ )
+    {
+        code[ (*pcode)++ ] = (uint8_t) value;
+        value >>= 8;
+    }
 } /* initialize_image_value */
 
 #ifdef OLDCPU
@@ -527,8 +573,9 @@ void initialie_word_value( pcode, value ) width_t * pcode; width_t value;
 void initialize_word_value( width_t * pcode, width_t value )
 #endif
 {
-    * ( uint16_t *) ( code + ( *pcode ) ) = (uint16_t) value;
-    *pcode += sizeof( uint16_t );
+    check_code_space( *pcode, 2 );
+    code[ (*pcode)++ ] = (uint8_t) value;
+    code[ (*pcode)++ ] = (uint8_t) ( value >> 8 );
 } /* initialize_word_value */
 
 #ifdef OLDCPU
@@ -615,6 +662,8 @@ int cdecl main( int argc, char * argv[] )
         usage();
     }
 
+    if ( strlen( input ) + 4 >= sizeof( acfile ) )
+        show_error( "input filename is too long" );
     strcpy( acfile, input);
     p = strstr( acfile, ".s" );
     if ( !p )
@@ -634,11 +683,13 @@ int cdecl main( int argc, char * argv[] )
     while ( fgets( buf, sizeof( buf ), fp ) )
     {
         line++;
-        offsets[ line ] = code_so_far;
         strcpy( original_line, buf );
-        p = strchr( (char *) buf, ';' );
-        if ( p )
-            *p = 0;
+        if ( line >= _countof( offsets ) )
+            show_error( "source exceeds assembler line capacity" );
+        if ( strlen( buf ) == sizeof( buf ) - 1 && buf[ sizeof( buf ) - 2 ] != '\n' )
+            show_error( "source line is too long" );
+        offsets[ line ] = code_so_far;
+        strip_comment( buf );
         rm_white( buf );
 
         len = (width_t) strlen( buf );
@@ -891,8 +942,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( val > 65535 )
                     show_error( "fzero takes 3 arguments: fzero register, register, 0..65535" );
 
-                code[ code_so_far++ ] = compose_op( 6, reg_from_token( t1 ), 3 );
-                code[ code_so_far++ ] = compose_op( 4, reg_from_token( t2 ), ( T_FZEROB == t ) ? 0 : g_byte_len );
+                emit_byte( &code_so_far, compose_op( 6, reg_from_token( t1 ), 3 ) );
+                emit_byte( &code_so_far, compose_op( 4, reg_from_token( t2 ), ( T_FZEROB == t ) ? 0 : g_byte_len ) );
                 initialize_word_value( & code_so_far, val );
                 break;
             }
@@ -900,8 +951,8 @@ int cdecl main( int argc, char * argv[] )
             {
                 if ( 1 != token_count )
                     show_error( "cpuinfo takes no arguments" );
-                code[ code_so_far++ ] = 0xa3;
-                code[ code_so_far++ ] = 0;
+                emit_byte( &code_so_far, 0xa3 );
+                emit_byte( &code_so_far, 0 );
                 initialize_word_value( & code_so_far, 0 );
                 break;
             }
@@ -909,14 +960,14 @@ int cdecl main( int argc, char * argv[] )
             {
                 if ( 1 != token_count )
                     show_error( "imgwid takes no arguments" );
-                code[ code_so_far++ ] = 0x84;
+                emit_byte( &code_so_far, 0x84 );
                 break;
             }
             case T_NATWID:
             {
                 if ( 1 != token_count )
                     show_error( "natwid takes no arguments" );
-                code[ code_so_far++ ] = 0xc8;
+                emit_byte( &code_so_far, 0xc8 );
                 break;
             }
             case T_ADDIMGW:
@@ -929,8 +980,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_reg( t1 ) )
                     show_error( "addimgw and subimgw take one register argument: addimgw reg\n" );
 
-                code[ code_so_far++ ] = compose_op( 4, reg_from_token( t1 ), 1 );
-                code[ code_so_far++ ] = compose_op( 3, 0, ( T_ADDIMGW == t ) ? 0 : 1 );
+                emit_byte( &code_so_far, compose_op( 4, reg_from_token( t1 ), 1 ) );
+                emit_byte( &code_so_far, compose_op( 3, 0, ( T_ADDIMGW == t ) ? 0 : 1 ) );
                 break;
             }
             case T_ADDNATW:
@@ -943,8 +994,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_reg( t1 ) )
                     show_error( "addnatw and subnatw take one register argument: addnatw reg\n" );
 
-                code[ code_so_far++ ] = compose_op( 4, reg_from_token( t1 ), 1 );
-                code[ code_so_far++ ] = compose_op( 6, 0, ( T_ADDNATW == t ) ? 0 : 1 );
+                emit_byte( &code_so_far, compose_op( 4, reg_from_token( t1 ), 1 ) );
+                emit_byte( &code_so_far, compose_op( 6, 0, ( T_ADDNATW == t ) ? 0 : 1 ) );
                 break;
             }
             case T_STST:
@@ -956,8 +1007,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_reg( t1 ) )
                     show_error( "stst takes one register argument: stst [reg] -- the pop() is implied\n" );
 
-                code[ code_so_far++ ] = compose_op( 4, reg_from_token( t1 ), 1 );
-                code[ code_so_far++ ] = compose_op( 2, 0, 1 );
+                emit_byte( &code_so_far, compose_op( 4, reg_from_token( t1 ), 1 ) );
+                emit_byte( &code_so_far, compose_op( 2, 0, 1 ) );
                 break;
             }
             case T_SIGNEXB:
@@ -971,8 +1022,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_reg( t1 ) )
                     show_error( "signex takes one register argument: signex reg\n" );
 
-                code[ code_so_far++ ] = compose_op( 3, reg_from_token( t1 ), 1 );
-                code[ code_so_far++ ] = compose_op( 4, 0, ( T_SIGNEXB == t ) ? 0 : ( T_SIGNEXW == t ) ? 1 : 2 );
+                emit_byte( &code_so_far, compose_op( 3, reg_from_token( t1 ), 1 ) );
+                emit_byte( &code_so_far, compose_op( 4, 0, ( T_SIGNEXB == t ) ? 0 : ( T_SIGNEXW == t ) ? 1 : 2 ) );
                 break;
             }
             case T_PUSHTWO:
@@ -985,8 +1036,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_reg( t1 ) || !is_reg( t2 ) )
                     show_error( "pushtwo requires two register arguments\n" );
 
-                code[ code_so_far++ ] = compose_op( 5, reg_from_token( t1 ), 1 );
-                code[ code_so_far++ ] = compose_op( 2, reg_from_token( t2 ), g_byte_len );
+                emit_byte( &code_so_far, compose_op( 5, reg_from_token( t1 ), 1 ) );
+                emit_byte( &code_so_far, compose_op( 2, reg_from_token( t2 ), g_byte_len ) );
                 break;
             }
             case T_POPTWO:
@@ -999,8 +1050,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_reg( t1 ) || !is_reg( t2 ) )
                     show_error( "poptwo requires two register arguments\n" );
 
-                code[ code_so_far++ ] = compose_op( 5, reg_from_token( t1 ), 1 );
-                code[ code_so_far++ ] = compose_op( 3, reg_from_token( t2 ), g_byte_len );
+                emit_byte( &code_so_far, compose_op( 5, reg_from_token( t1 ), 1 ) );
+                emit_byte( &code_so_far, compose_op( 3, reg_from_token( t2 ), g_byte_len ) );
                 break;
             }
             case T_PUSHF:
@@ -1013,8 +1064,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( offset < -4 || offset > 3 )
                     show_error( "pushf requires 1 arguments: an integer >= -4 and <= 3. e.g. pushf -2\n" );
 
-                code[ code_so_far++ ] = compose_op( 4, 0, 1 );
-                code[ code_so_far++ ] = compose_op( 1, offset, 1 );
+                emit_byte( &code_so_far, compose_op( 4, 0, 1 ) );
+                emit_byte( &code_so_far, compose_op( 1, offset, 1 ) );
                 break;
             }
             case T_LDF:
@@ -1029,8 +1080,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( offset < -4 || offset > 3 )
                     show_error( "ldf requires 2 arguments, a register and integer >= -4 and <= 3. e.g. ldf rres, -2\n" );
 
-                code[ code_so_far++ ] = compose_op( 3, reg_from_token( t1 ), 1 );
-                code[ code_so_far++ ] = compose_op( 0, offset, 1 );
+                emit_byte( &code_so_far, compose_op( 3, reg_from_token( t1 ), 1 ) );
+                emit_byte( &code_so_far, compose_op( 0, offset, 1 ) );
                 break;
             }
             case T_STF:
@@ -1045,8 +1096,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( offset < -4 || offset > 3 )
                     show_error( "stf requires 2 arguments, a register and integer >= -4 and <= 3. e.g. ldf rres, -2\n" );
 
-                code[ code_so_far++ ] = compose_op( 3, reg_from_token( t1 ), 1 );
-                code[ code_so_far++ ] = compose_op( 1, offset, 1 );
+                emit_byte( &code_so_far, compose_op( 3, reg_from_token( t1 ), 1 ) );
+                emit_byte( &code_so_far, compose_op( 1, offset, 1 ) );
                 break;
             }
             case T_SYSCALL:
@@ -1055,75 +1106,84 @@ int cdecl main( int argc, char * argv[] )
                     show_error( "syscall takes two arguments" );
 
                 u16val = (uint16_t) number_or_define( tokens[ 1 ] );
-                code[ code_so_far++ ] = compose_op( 4, ( u16val >> 3 ) & 7, 1 );
-                code[ code_so_far++ ] = compose_op( 0, ( u16val & 7 ), 0 );
+                emit_byte( &code_so_far, compose_op( 4, ( u16val >> 3 ) & 7, 1 ) );
+                emit_byte( &code_so_far, compose_op( 0, ( u16val & 7 ), 0 ) );
                 break;
             }
             case T_IMULST:
             {
                 if ( 1 != token_count )
                     show_error( "imulst takes no arguments" );
-                code[ code_so_far++ ] = compose_op( 1, 0, 0 );
+                emit_byte( &code_so_far, compose_op( 1, 0, 0 ) );
                 break;
             }
             case T_IDIVST:
             {
                 if ( 1 != token_count )
                     show_error( "idivst takes no arguments" );
-                code[ code_so_far++ ] = 0xa8;
+                emit_byte( &code_so_far, 0xa8 );
                 break;
             }
             case T_ADDST:
             {
                 if ( 1 != token_count )
                     show_error( "iaddst takes no arguments" );
-                code[ code_so_far++ ] = compose_op( 5, 0, 0 );
+                emit_byte( &code_so_far, compose_op( 5, 0, 0 ) );
                 break;
             }
             case T_SUBST:
             {
                 if ( 1 != token_count )
                     show_error( "isubst takes no arguments" );
-                code[ code_so_far++ ] = compose_op( 4, 0, 0 );
+                emit_byte( &code_so_far, compose_op( 4, 0, 0 ) );
                 break;
             }
             case T_MEMF:
             {
                 if ( 1 != token_count )
                     show_error( "memf takes no arguments" );
-                code[ code_so_far++ ] = compose_op( 3, 0, 1 );
-                code[ code_so_far++ ] = compose_op( 5, 0, g_byte_len );
+                emit_byte( &code_so_far, compose_op( 3, 0, 1 ) );
+                emit_byte( &code_so_far, compose_op( 5, 0, g_byte_len ) );
                 break;
             }
             case T_MEMFB:
             {
                 if ( 1 != token_count )
                     show_error( "memfb takes no arguments" );
-                code[ code_so_far++ ] = compose_op( 3, 0, 1 );
-                code[ code_so_far++ ] = compose_op( 5, 0, 0 );
+                emit_byte( &code_so_far, compose_op( 3, 0, 1 ) );
+                emit_byte( &code_so_far, compose_op( 5, 0, 0 ) );
                 break;
             }
+            case T_STADD:
             case T_STADDB:
             {
                 if ( 1 != token_count )
                     show_error( "staddb takes no arguments" );
-                code[ code_so_far++ ] = compose_op( 3, 0, 1 );
-                code[ code_so_far++ ] = compose_op( 6, 0, 0 );
+                emit_byte( &code_so_far, compose_op( 3, 0, 1 ) );
+                emit_byte( &code_so_far, compose_op( 6, 0, ( T_STADDB == t ) ? 0 : g_byte_len ) );
+                break;
+            }
+            case T_HALT:
+            case T_ANDST:
+            {
+                if ( 1 != token_count )
+                    show_error( "halt and andst take no arguments" );
+                emit_byte( &code_so_far, ( T_HALT == t ) ? 0 : 0xe0 );
                 break;
             }
             case T_RET0:
             {
-                code[ code_so_far++ ] = compose_op( 0, 2, 0 );
+                emit_byte( &code_so_far, compose_op( 0, 2, 0 ) );
                 break;
             }
             case T_RETNF:
             {
-                code[ code_so_far++ ] = 0x68;
+                emit_byte( &code_so_far, 0x68 );
                 break;
             }
             case T_RET0NF:
             {
-                code[ code_so_far++ ] = 0x48;
+                emit_byte( &code_so_far, 0x48 );
                 break;
             }
             case T_RET:
@@ -1132,15 +1192,15 @@ int cdecl main( int argc, char * argv[] )
                     show_error( "ret takes 0 or 1 arguments" );
 
                 if ( 1 == token_count )
-                    code[ code_so_far++ ] = compose_op( 6, 0, 0 );
+                    emit_byte( &code_so_far, compose_op( 6, 0, 0 ) );
                 else
                 {
                     num = number_or_define( tokens[ 1 ] );
                     if ( num < 1 || num > 8 )
                         show_error( "ret <constant> must be 1..8" );
 
-                    code[ code_so_far++ ] = compose_op( 3, 0, 1 );
-                    code[ code_so_far++ ] = compose_op( 2, (uint16_t) ( num - 1 ), 0 );
+                    emit_byte( &code_so_far, compose_op( 3, 0, 1 ) );
+                    emit_byte( &code_so_far, compose_op( 2, (uint16_t) ( num - 1 ), 0 ) );
                 }
                 break;
             }
@@ -1161,7 +1221,7 @@ int cdecl main( int argc, char * argv[] )
 
                 reg = reg_from_token( t2 );
 
-                code[ code_so_far++ ] = compose_op( 6, reg, 2 );
+                emit_byte( &code_so_far, compose_op( 6, reg, 2 ) );
                 initialize_image_value( & code_so_far, 0 );
                 break;
             }
@@ -1196,7 +1256,7 @@ int cdecl main( int argc, char * argv[] )
                 else if ( 3 == token_count )
                     reg = reg_from_token( t2 );
 
-                code[ code_so_far++ ] = compose_op( 3, reg, 2 );
+                emit_byte( &code_so_far, compose_op( 3, reg, 2 ) );
                 initialize_image_value( & code_so_far, 0 );
                 break;
             }
@@ -1235,13 +1295,13 @@ int cdecl main( int argc, char * argv[] )
                 {
                     // 4-byte instruction
 
-                    code[ code_so_far++ ] = compose_op( 3, reg, 3 );
-                    code[ code_so_far++ ] = 0;
+                    emit_byte( &code_so_far, compose_op( 3, reg, 3 ) );
+                    emit_byte( &code_so_far, 0 );
                     initialize_word_value( & code_so_far, 0 );
                 }
                 else
                 {
-                    code[ code_so_far++ ] = compose_op( 7, reg, 2 );
+                    emit_byte( &code_so_far, compose_op( 7, reg, 2 ) );
                     initialize_image_value( & code_so_far, 0 );
                 }
                 break;
@@ -1280,8 +1340,8 @@ int cdecl main( int argc, char * argv[] )
 
                 // 4-byte instruction
 
-                code[ code_so_far++ ] = compose_op( 3, reg, 3 );
-                code[ code_so_far++ ] = compose_op( strchr( buf, '[' ) ? 1 : 2, 0, 0 );
+                emit_byte( &code_so_far, compose_op( 3, reg, 3 ) );
+                emit_byte( &code_so_far, compose_op( strchr( buf, '[' ) ? 1 : 2, 0, 0 ) );
                 initialize_word_value( & code_so_far, 0 );
                 break;
             }
@@ -1304,7 +1364,7 @@ int cdecl main( int argc, char * argv[] )
                     reg = reg_from_token( t1 );
                     if ( 0 == reg || 2 == reg )
                         show_error( "inc of rsp and rzero are invalid" );
-                    code[ code_so_far++ ] = compose_op( 0, reg, 0 );
+                    emit_byte( &code_so_far, compose_op( 0, reg, 0 ) );
                 }
                 else
                 {
@@ -1318,7 +1378,7 @@ int cdecl main( int argc, char * argv[] )
                     else
                         reg = 0; // rzero
 
-                    code[ code_so_far++ ] = compose_op( 4, reg, 2 );
+                    emit_byte( &code_so_far, compose_op( 4, reg, 2 ) );
                     initialize_image_value( & code_so_far, 0 );
                 }
                 break;
@@ -1342,7 +1402,7 @@ int cdecl main( int argc, char * argv[] )
                     reg = reg_from_token( t1 );
                     if ( 0 == reg || 2 == reg )
                         show_error( "dec of rsp and rzero are invalid" );
-                    code[ code_so_far++ ] = compose_op( 1, reg, 0 );
+                    emit_byte( &code_so_far, compose_op( 1, reg, 0 ) );
                 }
                 else
                 {
@@ -1356,7 +1416,7 @@ int cdecl main( int argc, char * argv[] )
                     else
                         reg = 0; // rzero
 
-                    code[ code_so_far++ ] = compose_op( 5, reg, 2 );
+                    emit_byte( &code_so_far, compose_op( 5, reg, 2 ) );
                     initialize_image_value( & code_so_far, 0 );
                 }
                 break;
@@ -1368,7 +1428,9 @@ int cdecl main( int argc, char * argv[] )
                     show_error( "push takes a register argument" );
 
                 reg = reg_from_token( t1 );
-                code[ code_so_far++ ] = compose_op( 4, reg, 0 );
+                if ( reg <= 2 )
+                    show_error( "zero of rzero, rpc, and rsp uses reserved opcodes" );
+                emit_byte( &code_so_far, compose_op( 4, reg, 0 ) );
                 break;
             }
             case T_PUSH:
@@ -1381,7 +1443,7 @@ int cdecl main( int argc, char * argv[] )
                     show_error( "push rsp isn't valid" );
 
                 reg = reg_from_token( t1 );
-                code[ code_so_far++ ] = compose_op( 2, reg, 0 );
+                emit_byte( &code_so_far, compose_op( 2, reg, 0 ) );
                 break;
             }
             case T_POP:
@@ -1394,7 +1456,7 @@ int cdecl main( int argc, char * argv[] )
                     show_error( "pop rsp isn't valid" );
 
                 reg = reg_from_token( t1 );
-                code[ code_so_far++ ] = compose_op( 3, reg, 0 );
+                emit_byte( &code_so_far, compose_op( 3, reg, 0 ) );
                 break;
             }
             case T_SHL:
@@ -1406,7 +1468,7 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_reg( t1 ) )
                     show_error( "register expected as first argument" );
 
-                code[ code_so_far++ ] = compose_op( 5, reg_from_token( t1 ), 0 );
+                emit_byte( &code_so_far, compose_op( 5, reg_from_token( t1 ), 0 ) );
                 break;
             }
             case T_SHLIMG:
@@ -1414,7 +1476,7 @@ int cdecl main( int argc, char * argv[] )
                 if ( 1 != token_count )
                     show_error( "shlimg takes no arguments" );
 
-                code[ code_so_far++ ] = 0x28;
+                emit_byte( &code_so_far, 0x28 );
                 break;
             }
             case T_SHR:
@@ -1426,7 +1488,7 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_reg( t1 ) )
                     show_error( "register expected as first argument" );
 
-                code[ code_so_far++ ] = compose_op( 6, reg_from_token( t1 ), 0 );
+                emit_byte( &code_so_far, compose_op( 6, reg_from_token( t1 ), 0 ) );
                 break;
             }
             case T_SHRIMG:
@@ -1434,7 +1496,7 @@ int cdecl main( int argc, char * argv[] )
                 if ( 1 != token_count )
                     show_error( "shrimg takes no arguments" );
 
-                code[ code_so_far++ ] = 0x88;
+                emit_byte( &code_so_far, 0x88 );
                 break;
             }
             case T_ADD:
@@ -1454,8 +1516,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_reg( t2 ) )
                     show_error( "register expected as second argument" );
 
-                code[ code_so_far++ ] = compose_op( 0, reg_from_token( t1 ), 1 );
-                code[ code_so_far++ ] = compose_op( math_from_token( t ), reg_from_token( t2 ), 0 );
+                emit_byte( &code_so_far, compose_op( 0, reg_from_token( t1 ), 1 ) );
+                emit_byte( &code_so_far, compose_op( math_from_token( t ), reg_from_token( t2 ), 0 ) );
                 break;
             }
             case T_MODDIV:
@@ -1469,8 +1531,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_reg( t2 ) )
                     show_error( "register expected as second argument" );
 
-                code[ code_so_far++ ] = compose_op( 3, reg_from_token( t1 ), 1 );
-                code[ code_so_far++ ] = compose_op( 7, reg_from_token( t2 ), 0 );
+                emit_byte( &code_so_far, compose_op( 3, reg_from_token( t1 ), 1 ) );
+                emit_byte( &code_so_far, compose_op( 7, reg_from_token( t2 ), 0 ) );
                 break;
             }
             case T_STI:
@@ -1492,8 +1554,8 @@ int cdecl main( int argc, char * argv[] )
 
                 // r0 has high 3 bits and r1 has low 3 bits of CONSTANT
 
-                code[ code_so_far++ ] = compose_op( 6, ( ( i16val >> 3 ) & 7 ), 3 );
-                code[ code_so_far++ ] = compose_op( 1, ( i16val & 7 ), ( T_STIB == t ) ? 0 : g_byte_len );
+                emit_byte( &code_so_far, compose_op( 6, ( ( i16val >> 3 ) & 7 ), 3 ) );
+                emit_byte( &code_so_far, compose_op( 1, ( i16val & 7 ), ( T_STIB == t ) ? 0 : g_byte_len ) );
                 initialize_word_value( & code_so_far, val );
                 break;
             }
@@ -1512,15 +1574,15 @@ int cdecl main( int argc, char * argv[] )
 
                 if ( is_reg( t1 ) ) // st [rdst], rsrc
                 {
-                    code[ code_so_far++ ] = compose_op( 5, reg_from_token( t1 ), 1 );
-                    code[ code_so_far++ ] = compose_op( 0, reg_from_token( t2 ), g_byte_len );
+                    emit_byte( &code_so_far, compose_op( 5, reg_from_token( t1 ), 1 ) );
+                    emit_byte( &code_so_far, compose_op( 0, reg_from_token( t2 ), g_byte_len ) );
                 }
                 else // st [address], register
                 {
                     if ( T_INVALID != t1 )
                         show_error( "label expected as first argument" );
     
-                    code[ code_so_far++ ] = compose_op( 2, reg_from_token( t2 ), 2 );
+                    emit_byte( &code_so_far, compose_op( 2, reg_from_token( t2 ), 2 ) );
                     initialize_image_value( & code_so_far, 0 );
                 }
                 break;
@@ -1553,11 +1615,12 @@ int cdecl main( int argc, char * argv[] )
                 tmp = (uint8_t) ( ( T_LDOINC == t || T_LDOINCB == t ) ? 1 : 0 );
                 width = (uint8_t) ( ( T_LDOB == t || T_LDOINCB == t ) ? 0 : g_byte_len );
 
-                code[ code_so_far++ ] = compose_op( 5, reg_from_token( t1 ), 3 );
-                code[ code_so_far++ ] = compose_op( tmp, reg_from_token( t3 ), width );
+                emit_byte( &code_so_far, compose_op( 5, reg_from_token( t1 ), 3 ) );
+                emit_byte( &code_so_far, compose_op( tmp, reg_from_token( t3 ), width ) );
                 initialize_word_value( & code_so_far, val );
                 break;
             }
+            case T_LDOR:
             case T_LDORB:
             {
                 if ( 4 != token_count )
@@ -1566,15 +1629,16 @@ int cdecl main( int argc, char * argv[] )
                 t2 = find_token( tokens[ 2 ] );
                 t3 = find_token( tokens[ 3 ] );
 
-                if ( !is_reg( t1 ) || !is_reg( t2 ) || !is_reg( t3 ) )
+                if ( !is_reg( t1 ) || T_RZERO == t1 || !is_reg( t2 ) || !is_reg( t3 ) )
                     show_error( "all three arguments must be registers" );
 
-                code[ code_so_far++ ] = compose_op( 6, reg_from_token( t1 ), 3 );
-                code[ code_so_far++ ] = compose_op( 7, reg_from_token( t2 ), 0 );
-                code[ code_so_far++ ] = compose_op( 0, reg_from_token( t3 ), 0 );
-                code[ code_so_far++ ] = 0;
+                emit_byte( &code_so_far, compose_op( 6, reg_from_token( t1 ), 3 ) );
+                emit_byte( &code_so_far, compose_op( 7, reg_from_token( t2 ), ( T_LDORB == t ) ? 0 : g_byte_len ) );
+                emit_byte( &code_so_far, compose_op( 0, reg_from_token( t3 ), 0 ) );
+                emit_byte( &code_so_far, 0 );
                 break;
             }
+            case T_STOI:
             case T_STOIB:
             {
                 if ( 4 != token_count )
@@ -1592,11 +1656,12 @@ int cdecl main( int argc, char * argv[] )
                 val = number_or_define( tokens[ 3 ] );
                 check_if_in_i16_range( val );
 
-                code[ code_so_far++ ] = compose_op( 6, reg_from_token( t1 ), 3 );
-                code[ code_so_far++ ] = compose_op( 5, reg_from_token( t2 ), 0 );
+                emit_byte( &code_so_far, compose_op( 6, reg_from_token( t1 ), 3 ) );
+                emit_byte( &code_so_far, compose_op( 5, reg_from_token( t2 ), ( T_STOIB == t ) ? 0 : g_byte_len ) );
                 initialize_word_value( & code_so_far, val );
                 break;
             }
+            case T_STOR:
             case T_STORB:
             {
                 if ( 4 != token_count )
@@ -1608,10 +1673,10 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_reg( t1 ) || !is_reg( t2 ) || !is_reg( t3 ) )
                     show_error( "all three arguments must be registers" );
 
-                code[ code_so_far++ ] = compose_op( 6, reg_from_token( t1 ), 3 );
-                code[ code_so_far++ ] = compose_op( 6, reg_from_token( t2 ), 0 );
-                code[ code_so_far++ ] = compose_op( 0, reg_from_token( t3 ), 0 );
-                code[ code_so_far++ ] = 0;
+                emit_byte( &code_so_far, compose_op( 6, reg_from_token( t1 ), 3 ) );
+                emit_byte( &code_so_far, compose_op( 6, reg_from_token( t2 ), ( T_STORB == t ) ? 0 : g_byte_len ) );
+                emit_byte( &code_so_far, compose_op( 0, reg_from_token( t3 ), 0 ) );
+                emit_byte( &code_so_far, 0 );
                 break;
             }
             case T_STOB:
@@ -1633,8 +1698,8 @@ int cdecl main( int argc, char * argv[] )
                     val = number_or_define( tokens[ 2 ] );
                 check_if_in_i16_range( val );
 
-                code[ code_so_far++ ] = compose_op( 4, reg_from_token( t3 ), 3 );
-                code[ code_so_far++ ] = compose_op( 0, reg_from_token( t2 ), 0 );
+                emit_byte( &code_so_far, compose_op( 4, reg_from_token( t3 ), 3 ) );
+                emit_byte( &code_so_far, compose_op( 0, reg_from_token( t2 ), 0 ) );
                 initialize_word_value( & code_so_far, val );
                 break;
             }
@@ -1656,8 +1721,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( is_number( tokens[ 2 ] ) || find_define( tokens[ 2 ] ) )
                     val = number_or_define( tokens[ 2 ] );
 
-                code[ code_so_far++ ] = compose_op( 4, reg_from_token( t3 ), 3 );
-                code[ code_so_far++ ] = compose_op( 0, reg_from_token( t2 ), g_byte_len );
+                emit_byte( &code_so_far, compose_op( 4, reg_from_token( t3 ), 3 ) );
+                emit_byte( &code_so_far, compose_op( 0, reg_from_token( t2 ), g_byte_len ) );
                 initialize_word_value( & code_so_far, val );
                 break;
             }
@@ -1673,8 +1738,8 @@ int cdecl main( int argc, char * argv[] )
 
                 if ( is_reg( t2 ) )
                 {
-                    code[ code_so_far++ ] = compose_op( 4, reg_from_token( t1 ), 1 );
-                    code[ code_so_far++ ] = compose_op( 4, reg_from_token( t2 ), 0 );
+                    emit_byte( &code_so_far, compose_op( 4, reg_from_token( t1 ), 1 ) );
+                    emit_byte( &code_so_far, compose_op( 4, reg_from_token( t2 ), 0 ) );
                 }
                 else
                 {
@@ -1689,8 +1754,8 @@ int cdecl main( int argc, char * argv[] )
                             show_error( "stincb value must be < 256" );
                     }
     
-                    code[ code_so_far++ ] = compose_op( 1, reg_from_token( t1 ), 3 );
-                    code[ code_so_far++ ] = 0;
+                    emit_byte( &code_so_far, compose_op( 1, reg_from_token( t1 ), 3 ) );
+                    emit_byte( &code_so_far, 0 );
                     initialize_word_value( & code_so_far, val );
                 }
                 break;
@@ -1707,8 +1772,8 @@ int cdecl main( int argc, char * argv[] )
 
                 if ( is_reg( t2 ) )
                 {
-                    code[ code_so_far++ ] = compose_op( 4, reg_from_token( t1 ), 1 );
-                    code[ code_so_far++ ] = compose_op( 4, reg_from_token( t2 ), g_byte_len );
+                    emit_byte( &code_so_far, compose_op( 4, reg_from_token( t1 ), 1 ) );
+                    emit_byte( &code_so_far, compose_op( 4, reg_from_token( t2 ), g_byte_len ) );
                 }
                 else
                 {
@@ -1720,8 +1785,8 @@ int cdecl main( int argc, char * argv[] )
                         val = number_or_define( tokens[ 2 ] );
                     check_if_in_i16_range( val );
     
-                    code[ code_so_far++ ] = compose_op( 1, reg_from_token( t1 ), 3 );
-                    code[ code_so_far++ ] = compose_op( 0, 0, g_byte_len );
+                    emit_byte( &code_so_far, compose_op( 1, reg_from_token( t1 ), 3 ) );
+                    emit_byte( &code_so_far, compose_op( 0, 0, g_byte_len ) );
                     initialize_word_value( & code_so_far, val );
                 }
                 break;
@@ -1735,8 +1800,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_reg( t1 ) || !is_reg( t2 ) )
                     show_error( "registers expected for both arguments" );
 
-                code[ code_so_far++ ] = compose_op( 5, reg_from_token( t1 ), 1 );
-                code[ code_so_far++ ] = compose_op( 0, reg_from_token( t2 ), 0 );
+                emit_byte( &code_so_far, compose_op( 5, reg_from_token( t1 ), 1 ) );
+                emit_byte( &code_so_far, compose_op( 0, reg_from_token( t2 ), 0 ) );
                 break;
             }
             case T_LD:
@@ -1751,15 +1816,15 @@ int cdecl main( int argc, char * argv[] )
 
                 if ( is_reg( t2 ) ) // ld rdst, [rsrc]
                 {
-                    code[ code_so_far++ ] = compose_op( 5, reg_from_token( t1 ), 1 );
-                    code[ code_so_far++ ] = compose_op( 1, reg_from_token( t2 ), g_byte_len );
+                    emit_byte( &code_so_far, compose_op( 5, reg_from_token( t1 ), 1 ) );
+                    emit_byte( &code_so_far, compose_op( 1, reg_from_token( t2 ), g_byte_len ) );
                 }
                 else // ld rdst, [ address (+ number) ]
                 {
                     if ( T_INVALID != t2 )
                         show_error( "label expected as second argument" );
     
-                    code[ code_so_far++ ] = compose_op( 0, reg_from_token( t1 ), 2 );
+                    emit_byte( &code_so_far, compose_op( 0, reg_from_token( t1 ), 2 ) );
                     initialize_image_value( & code_so_far, 0 );
                 }
                 break;
@@ -1779,16 +1844,16 @@ int cdecl main( int argc, char * argv[] )
                     if ( 3 != token_count )
                         show_error( "invalid arguments for ldb. ldst can't be rzero. expected ldb rdst, [rsrc]\n" );
 
-                    code[ code_so_far++ ] = compose_op( 5, reg_from_token( t1 ), 1 );
-                    code[ code_so_far++ ] = compose_op( 1, reg_from_token( t2 ), 0 );
+                    emit_byte( &code_so_far, compose_op( 5, reg_from_token( t1 ), 1 ) );
+                    emit_byte( &code_so_far, compose_op( 1, reg_from_token( t2 ), 0 ) );
                 }
                 else // ldb rdst, [ address (+ number) ]
                 {
                     if ( T_INVALID != t2 )
                         show_error( "address expected as second argument" );
     
-                    code[ code_so_far++ ] = compose_op( 6, reg_from_token( t1 ), 3 );
-                    code[ code_so_far++ ] = 0;
+                    emit_byte( &code_so_far, compose_op( 6, reg_from_token( t1 ), 3 ) );
+                    emit_byte( &code_so_far, 0 );
                     initialize_word_value( & code_so_far, 0 );
                 }
                 break;
@@ -1813,9 +1878,9 @@ int cdecl main( int argc, char * argv[] )
                     show_error( "cstf requires 4 arguments: register, register, REL, and integer >= -4 and <= 3\n" );
 
 
-                code[ code_so_far++ ] = compose_op( 7, reg_from_token( t1 ), 3 );
-                code[ code_so_far++ ] = compose_op( relation_from_token( t3 ), reg_from_token( t2 ), 0 );
-                initialize_word_value( & code_so_far, (uint8_t) ( 0xff & ( offset << 2 ) ) );
+                emit_byte( &code_so_far, compose_op( 7, reg_from_token( t1 ), 3 ) );
+                emit_byte( &code_so_far, compose_op( relation_from_token( t3 ), reg_from_token( t2 ), 0 ) );
+                initialize_word_value( & code_so_far, (uint8_t) ( 0xff & ( (uint16_t) offset << 2 ) ) );
                 break;
             }
             case T_J:
@@ -1836,8 +1901,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( T_INVALID != t4 && T_RET != t4 && T_RET0 != t4 && T_RETNF != t4 && T_RET0NF != t4 )
                     show_error( "label or return expected as fourth argument" );
 
-                code[ code_so_far++ ] = compose_op( 0, reg_from_token( t1 ), 3 );
-                code[ code_so_far++ ] = compose_op( relation_from_token( t3 ), reg_from_token( t2 ), 0 );
+                emit_byte( &code_so_far, compose_op( 0, reg_from_token( t1 ), 3 ) );
+                emit_byte( &code_so_far, compose_op( relation_from_token( t3 ), reg_from_token( t2 ), 0 ) );
                 initialize_word_value( & code_so_far, 0 );
                 break;
             }
@@ -1861,11 +1926,12 @@ int cdecl main( int argc, char * argv[] )
                 if ( T_INVALID != t4 && T_RET != t4 && T_RET0 != t4 && T_RETNF != t4 && T_RET0NF != t4 )
                     show_error( "label or return expected as fourth argument" );
 
-                code[ code_so_far++ ] = compose_op( 0, reg_from_token( t1 ), 3 );
-                code[ code_so_far++ ] = compose_op( relation_from_token( t3 ), (uint16_t) ( arg - 1 ), 1 );
+                emit_byte( &code_so_far, compose_op( 0, reg_from_token( t1 ), 3 ) );
+                emit_byte( &code_so_far, compose_op( relation_from_token( t3 ), (uint16_t) ( arg - 1 ), 1 ) );
                 initialize_word_value( & code_so_far, 0 );
                 break;
             }
+            case T_JREL:
             case T_JRELB:
             {
                 if ( 6 != token_count )
@@ -1887,8 +1953,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_relation_token( t4 ) )
                     show_error( "relation expected as fourth argument" );
 
-                code[ code_so_far++ ] = compose_op( 0, reg_from_token( t1 ), 3 );
-                code[ code_so_far++ ] = compose_op( relation_from_token( t4 ), reg_from_token( t2 ), 2 );
+                emit_byte( &code_so_far, compose_op( 0, reg_from_token( t1 ), 3 ) );
+                emit_byte( &code_so_far, compose_op( relation_from_token( t4 ), reg_from_token( t2 ), ( T_JRELB == t ) ? 2 : 3 ) );
                 initialize_word_value( & code_so_far, (uint8_t) result );
                 break;
             }
@@ -1914,8 +1980,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( ival < -16 || ival > 15 )
                     show_error( "ldib only supports values -16..15" );
 
-                code[ code_so_far++ ] = compose_op( 3, reg_from_token( t1 ), 1 );
-                code[ code_so_far++ ] = (uint8_t) ( ( 3 << 5 ) | (uint8_t) ( 0x1f & ival ) );
+                emit_byte( &code_so_far, compose_op( 3, reg_from_token( t1 ), 1 ) );
+                emit_byte( &code_so_far, (uint8_t) ( ( 3 << 5 ) | (uint8_t) ( 0x1f & ival ) ) );
                 break;
             }
             case T_LDIW:
@@ -1941,8 +2007,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( ( ival < -32768 ) || ( ival > 32767 ) )
                     show_error( "value is out of 2-byte range" );
 
-                code[ code_so_far++ ] = compose_op( 5, reg_from_token( t1 ), 3 );
-                code[ code_so_far++ ] = compose_op( 2, 0, 1 );
+                emit_byte( &code_so_far, compose_op( 5, reg_from_token( t1 ), 3 ) );
+                emit_byte( &code_so_far, compose_op( 2, 0, 1 ) );
                 initialize_word_value( & code_so_far, ival );
                 break;
             }
@@ -1966,13 +2032,13 @@ int cdecl main( int argc, char * argv[] )
 
                 if ( ( g_image_width > (uint8_t) 2 ) && ( (iwidth_t) 0 != ival ) && ( ival > -32768 ) && ( ival < 32767 ) ) 
                 {
-                    code[ code_so_far++ ] = compose_op( 5, reg_from_token( t1 ), 3 );
-                    code[ code_so_far++ ] = compose_op( 2, 0, 1 );
+                    emit_byte( &code_so_far, compose_op( 5, reg_from_token( t1 ), 3 ) );
+                    emit_byte( &code_so_far, compose_op( 2, 0, 1 ) );
                     initialize_word_value( & code_so_far, ival );
                 }
                 else
                 {
-                    code[ code_so_far++ ] = compose_op( 1, reg_from_token( t1 ), 2 );
+                    emit_byte( &code_so_far, compose_op( 1, reg_from_token( t1 ), 2 ) );
                     initialize_image_value( & code_so_far, ival );
                 }
                 break;
@@ -1987,8 +2053,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_reg( t1 ) || !is_reg( t2 ) )
                     show_error( "swap takes two registers as arguments" );
 
-                code[ code_so_far++ ] = compose_op( 4, reg_from_token( t1 ), 1 );
-                code[ code_so_far++ ] = compose_op( 5, reg_from_token( t2 ), 0 ); /* swap full registers, other widths can be overridden */
+                emit_byte( &code_so_far, compose_op( 4, reg_from_token( t1 ), 1 ) );
+                emit_byte( &code_so_far, compose_op( 5, reg_from_token( t2 ), 0 ) ); /* swap full registers, other widths can be overridden */
                 break;
             }
             case T_CMPST:
@@ -2002,8 +2068,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_reg( t1 ) || !is_reg( t2 ) || !is_relation_token( t3 ) )
                     show_error( "cmpst takes 3 arguments: cmpst, r0dst, r1right, relation" );
 
-                code[ code_so_far++ ] = compose_op( 2, reg_from_token( t1 ), 1 );
-                code[ code_so_far++ ] = compose_op( relation_from_token( t3 ), reg_from_token( t2 ), 0 );
+                emit_byte( &code_so_far, compose_op( 2, reg_from_token( t1 ), 1 ) );
+                emit_byte( &code_so_far, compose_op( relation_from_token( t3 ), reg_from_token( t2 ), 0 ) );
                 break;
             }
             case T_MATH:
@@ -2019,8 +2085,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_reg( t1 ) || !is_reg( t2 ) || !is_reg( t3 ) || !is_math_token( t4 ) )
                     show_error( "math takes 4 arguments: r0dst, r1left, r2right, MATH" );
 
-                code[ code_so_far++ ] = compose_op( 6, reg_from_token( t1 ), 3 );
-                code[ code_so_far++ ] = compose_op( 2, reg_from_token( t2 ), 0 );
+                emit_byte( &code_so_far, compose_op( 6, reg_from_token( t1 ), 3 ) );
+                emit_byte( &code_so_far, compose_op( 2, reg_from_token( t2 ), 0 ) );
                 initialize_word_value( & code_so_far, compose_op( math_from_token( t4 ), reg_from_token( t3 ), 0 ) );
                 break;
             }
@@ -2037,8 +2103,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_reg( t1 ) || !is_reg( t2 ) || !is_reg( t3 ) || !is_relation_token( t4 ) )
                     show_error( "cmp takes 4 arguments: r0dst, r1left, r2right, RELATION" );
 
-                code[ code_so_far++ ] = compose_op( 6, reg_from_token( t1 ), 3 );
-                code[ code_so_far++ ] = compose_op( 3, reg_from_token( t2 ), 0 );
+                emit_byte( &code_so_far, compose_op( 6, reg_from_token( t1 ), 3 ) );
+                emit_byte( &code_so_far, compose_op( 3, reg_from_token( t2 ), 0 ) );
                 initialize_word_value( & code_so_far, compose_op( relation_from_token( t4 ), reg_from_token( t3 ), 0 ) );
                 break;
             }
@@ -2053,8 +2119,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_reg( t1 ) || !is_reg( t2 ) || !is_math_token( t3 ) )
                     show_error( "mathst takes 3 arguments: cmpst, r0dst, r1right, relation" );
 
-                code[ code_so_far++ ] = compose_op( 7, reg_from_token( t1 ), 1 );
-                code[ code_so_far++ ] = compose_op( math_from_token( t3 ), reg_from_token( t2 ), 0 );
+                emit_byte( &code_so_far, compose_op( 7, reg_from_token( t1 ), 1 ) );
+                emit_byte( &code_so_far, compose_op( math_from_token( t3 ), reg_from_token( t2 ), 0 ) );
                 break;
             }
             case T_MOV:
@@ -2066,8 +2132,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_reg( t1 ) || ( T_RZERO == t1 ) || !is_reg( t2 ) )
                     show_error( "mov takes 2 register arguments; first must not be rzero" );
 
-                code[ code_so_far++ ] = compose_op( 6, reg_from_token( t1 ), 1 );
-                code[ code_so_far++ ] = compose_op( 0, reg_from_token( t2 ), 0 );
+                emit_byte( &code_so_far, compose_op( 6, reg_from_token( t1 ), 1 ) );
+                emit_byte( &code_so_far, compose_op( 0, reg_from_token( t2 ), 0 ) );
                 break;
             }
             case T_CMOV:
@@ -2083,8 +2149,8 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_relation_token( t3 ) )
                     show_error( "cmov takes a relation as the third argument" );
 
-                code[ code_so_far++ ] = compose_op( 1, reg_from_token( t1 ), 1 );
-                code[ code_so_far++ ] = compose_op( relation_from_token( t3 ), reg_from_token( t2 ), 0 );
+                emit_byte( &code_so_far, compose_op( 1, reg_from_token( t1 ), 1 ) );
+                emit_byte( &code_so_far, compose_op( relation_from_token( t3 ), reg_from_token( t2 ), 0 ) );
                 break;
             }
             case T_INV:
@@ -2096,7 +2162,7 @@ int cdecl main( int argc, char * argv[] )
                 if ( !is_reg( t1 ) )
                     show_error( "register expected as first argument" );
 
-                code[ code_so_far++ ] = compose_op( 7, reg_from_token( t1 ), 0 );
+                emit_byte( &code_so_far, compose_op( 7, reg_from_token( t1 ), 0 ) );
                 break;
             }
             default:
@@ -2124,6 +2190,7 @@ int cdecl main( int argc, char * argv[] )
 
     data_mode = 0;
     code_mode = 0;
+    check_code_space( code_so_far, initialized_data_so_far );
     total_code = code_so_far;
     code_so_far = 0;
     total_initialized_data = initialized_data_so_far;
@@ -2137,9 +2204,7 @@ int cdecl main( int argc, char * argv[] )
     {
         line++;
         strcpy( original_line, buf );
-        p = strchr( (char *) buf, ';' );
-        if ( p )
-            *p = 0;
+        strip_comment( buf );
         rm_white( buf );
 
         len = (width_t) strlen( buf );
@@ -2224,6 +2289,7 @@ int cdecl main( int argc, char * argv[] )
                     show_error( "internal error: can't find label on second pass" );
 
                 plabel->offset = initialized_data_offset;
+                check_code_space( initialized_data_offset, plabel->datasize );
                 memcpy( & code[ initialized_data_offset ], tokens[ 2 ], (int) plabel->datasize );
                 initialized_data_offset += plabel->datasize;
                 break;
@@ -2431,12 +2497,13 @@ int cdecl main( int argc, char * argv[] )
                 initialize_word_value( & code_so_far, diff );
                 break;
             }
+            case T_JREL:
             case T_JRELB:
             {
                 t5 = find_token( tokens[ 5 ] );
 
                 if ( T_RET == t5 )
-                    code_so_far += ( 2 + g_image_width );
+                    code_so_far += 4;
                 else
                 {
                     if ( T_RETNF == t5 )
@@ -2450,10 +2517,7 @@ int cdecl main( int argc, char * argv[] )
                         plabel = find_label( tokens[ 5 ] );
                         val = plabel->offset;
         
-                        if ( val > code_so_far )
-                            diff = val - code_so_far;
-                        else
-                            diff = code_so_far - val;
+                        diff = (iwidth_t) val - (iwidth_t) code_so_far;
         
                         if ( diff > 127 || diff < -128 )
                             show_error( "jrelb jump offset must be -128..127" );
@@ -2463,7 +2527,7 @@ int cdecl main( int argc, char * argv[] )
                     if ( 0 != code[ code_so_far ] )
                         show_error( "internal error in second pass: offset isn't zero" );
     
-                    code[ code_so_far++ ] = (int8_t) diff;
+                    emit_byte( &code_so_far, (int8_t) diff );
                 }
                 break;
             }
@@ -2496,8 +2560,8 @@ int cdecl main( int argc, char * argv[] )
                 {
                     plabel = find_label( tokens[ 2 ] );
                     val = plabel->offset;
-                    if ( val > 65535 )
-                        show_error( "ldiw can't reference this label because its address is too large" );
+                    if ( val > 32767 )
+                        show_error( "ldiw label address exceeds signed 16-bit range; use ldi" );
 
                     word_zero_check( code_so_far );
                     initialize_word_value( & code_so_far, val );
@@ -2577,7 +2641,7 @@ int cdecl main( int argc, char * argv[] )
                 val = 0;
 
                 if ( is_number( tokens[ 1 ] ) || find_define( tokens[ 1 ] ) )
-                    code_so_far += g_image_width;
+                    code_so_far += 2;
                 else
                 {
                     plabel = find_label( tokens[ 1 ] );
@@ -2624,8 +2688,11 @@ int cdecl main( int argc, char * argv[] )
             case T_FZERO:
             case T_FZEROB:
             case T_CMP:
+            case T_STOI:
             case T_STOIB:
+            case T_STOR:
             case T_STORB:
+            case T_LDOR:
             case T_LDORB:
             {
                 code_so_far += 4;
@@ -2655,6 +2722,7 @@ int cdecl main( int argc, char * argv[] )
             case T_STB:
             case T_MEMF:
             case T_MEMFB:
+            case T_STADD:
             case T_STADDB:
             case T_SIGNEXB:
             case T_SIGNEXW:
@@ -2678,6 +2746,8 @@ int cdecl main( int argc, char * argv[] )
             case T_IDIVST:
             case T_ADDST:
             case T_ZERO:
+            case T_HALT:
+            case T_ANDST:
             case T_RET0:
             case T_RETNF:
             case T_RET0NF:

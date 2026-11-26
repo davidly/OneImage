@@ -24,7 +24,7 @@ goto :eof
 
 :basicRun
 
-ba -q -a:o -x basic\%~1
+"%~dp0ba.exe" -q -a:o -x basic\%~1
 del %~1.s 1>nul 2>nul
 move basic\%~1.s . 1>nul
 
