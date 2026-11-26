@@ -94,6 +94,12 @@ class Regression(unittest.TestCase):
     def test_existing_instruction_suite(self):
         self.matrix((ROOT / 'testoi.s').read_text(), '1 argc\ncase.oi\ndone\n')
 
+    def test_assembly_instruction_suites(self):
+        for name in ('isa_arithmetic', 'isa_relations', 'isa_memory'):
+            with self.subTest(suite=name):
+                self.matrix((ROOT / 'tests' / (name + '.s')).read_text(),
+                            name + ' PASS\n')
+
     def test_signed_frame_offsets(self):
         source = '.code\n call frame\n halt\nframe:\n' + ' push rzero\n' * 4
         expected = ''

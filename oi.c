@@ -637,9 +637,7 @@ static bool CheckRelation( ioi_t l, ioi_t r, uint8_t relation )
 
     assert( false );
 
-#ifdef WATCOM
     return false;
-#endif /* WATCOM */
 } /* CheckRelation */
 
 #ifdef OLDCPU
@@ -726,7 +724,7 @@ static const char * render_value( oi_t val, uint8_t width )
         sprintf( ac, "%08x", (uint32_t) val );
 #ifdef OI8
     else
-        sprintf( ac, "%016llx", val );
+        sprintf( ac, "%016llx", (unsigned long long) val );
 #endif /* OI8 */
 #endif /* OI2 */
 
@@ -781,7 +779,7 @@ static void TraceState()
 #endif
 #ifdef OI8
     trace( "rpc %08llx %02x %02x %02x %02x rres %llx rtmp %llx rarg1 %llx rarg2 %llx rframe %llx, rsp %llx tos %llx : ",
-            g_oi.rpc, op, op1, op2, op3, g_oi.rres, g_oi.rtmp, g_oi.rarg1, g_oi.rarg2, g_oi.rframe, g_oi.rsp, tos );
+            (unsigned long long) g_oi.rpc, op, op1, op2, op3, (unsigned long long) g_oi.rres, (unsigned long long) g_oi.rtmp, (unsigned long long) g_oi.rarg1, (unsigned long long) g_oi.rarg2, (unsigned long long) g_oi.rframe, (unsigned long long) g_oi.rsp, (unsigned long long) tos );
 #endif
 
     pdis = DisassembleOI( popcodes, g_oi.rpc, g_oi.image_width );

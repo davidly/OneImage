@@ -100,9 +100,9 @@ void OISyscall( size_t function )
 #ifdef OI8
             else if ( 8 == image_width )
             {
-                printf( "%lld", (int64_t) g_oi.rarg1 );
+                printf( "%lld", (long long) (int64_t) g_oi.rarg1 );
 #ifndef NDEBUG
-                trace( "syscall integer: %lld\n", (int64_t) g_oi.rarg1 );
+                trace( "syscall integer: %lld\n", (long long) (int64_t) g_oi.rarg1 );
 #endif
             }
 #endif
@@ -206,7 +206,7 @@ void init_args_env( char * appname, int argc, char * argv[], int child_argc, int
 
 #ifndef NDEBUG
     trace( "argument and environment information:\n" );
-    trace_binary_data( & ram[ ram_size - head_len ], head_len, 2 );
+    trace_binary_data( (char *) & ram[ ram_size - head_len ], head_len, 2 );
 #endif
 } /* init_args_env */
 
@@ -409,7 +409,7 @@ int cdecl main( int argc, char * argv[] )
 
 #ifndef NDEBUG
     if ( show_perf )
-        printf( "total instructions executed: %lu\n", total_instructions );
+        printf( "total instructions executed: %lu\n", (unsigned long) total_instructions );
 
     if ( tracing )
         close_trace();

@@ -57,3 +57,21 @@ The legacy `runall.sh` and `runall.bat` runners also use the local BA, but requi
 an external `diff` command and a `baseline_test_oios.txt` file, which is not
 included in this repository. Use the Python regression runner for a self-contained
 test of a checkout.
+
+
+The standalone assembly suites in `tests/isa_arithmetic.s`, `tests/isa_relations.s`,
+and `tests/isa_memory.s` contain 167 numbered assertions. They cover ALU and
+stack operand ordering, signed division, shifts and extension, all eight
+relations with taken and untaken branches, conditional moves, byte/native
+memory access, index scaling, unaligned access, bulk boundaries, and stack
+balance. Each prints its name followed by `PASS`, or `FAIL assertion N`.
+The Python runner checks the exact success output for all six supported
+image/interpreter width combinations. Existing targeted regressions additionally
+cover calls, returns, signed frame offsets, and relative-branch boundaries.
+
+Run an assembly suite individually, for example:
+
+```sh
+./oia -w:2 tests/isa_arithmetic.s
+./oios2 tests/isa_arithmetic
+```

@@ -132,7 +132,7 @@ static const char * image_value( uint8_t * pop, uint8_t image_width )
 #ifndef MSC6
 #ifndef OLDCPU
     else
-        sprintf( ac, "%llx", getqword( pop ) );
+        sprintf( ac, "%llx", (unsigned long long) getqword( pop ) );
 #endif
 #endif
 
@@ -169,7 +169,7 @@ static const char * relative_value( uint8_t * pop, oi_t rpc, uint8_t width )
 #ifndef OLDCPU
 #ifndef MSC6
     if ( 3 == width )
-        sprintf( ac, "%llx", (uint64_t) final );
+        sprintf( ac, "%llx", (unsigned long long) final );
     else
 #endif
 #endif
