@@ -1241,6 +1241,7 @@ __forceinline static void op_c0_d0_do( opcode_t op )
                 set_qword( val + 8 * index, (int64_t) (int16_t) val16 );
 #endif /* OI8 */
 #endif /* OI2 */
+            break;
         }
         case 6: /* stor r0address[ r1index ], r2value */
         {
@@ -1259,6 +1260,7 @@ __forceinline static void op_c0_d0_do( opcode_t op )
                 set_qword( val + 8 * index, get_reg_from_op( get_op2() ) );
 #endif /* OI8 */
 #endif /* OI2 */
+            break;
         }
         case 7: /* ldor r0destination, r1address[ r2index ] */
         {
@@ -1277,6 +1279,7 @@ __forceinline static void op_c0_d0_do( opcode_t op )
                 set_reg_from_op( op, get_qword( val + 8 * index ) );
 #endif /* OI8 */
 #endif /* OI2 */
+            break;
         }
     }
 } /* op_c0_d0_do */
