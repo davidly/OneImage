@@ -1,3 +1,17 @@
 /ba
 /ba.exe
 /ba.obj
+/oia
+/oia.exe
+/oios2
+/oios2.exe
+/oios4
+/oios4.exe
+/oios8
+/oios8.exe
+/*.obj
+/*.asm
+/*.pdb
+/*.ilk
+/*.iobj
+/*.ipdb
