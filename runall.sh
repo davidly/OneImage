@@ -1,7 +1,10 @@
 #!/bin/bash
+set -e
+cd "$(dirname "$0")"
+export PATH="$PWD:$PATH"
 
 outputfile="test_oios.txt"
-echo $(date) >$outputfile
+echo "OneImage regression tests" >$outputfile
 
 declare -a _applist=(
     sieveoi eoi tttoi testoi
@@ -36,7 +39,7 @@ test_app()
 test_basic_app()
 {
     ./ba -q -a:o -x basic/$1
-    rm $1.s
+    rm -f $1.s
     mv basic/$1.s .
     test_app $1
 }
@@ -56,5 +59,5 @@ oios2 tttoi 17 >>$outputfile
 oia -w:4 tttoi >>$outputfile
 oios4 tttoi 13 >>$outputfile
 
-echo $(date) >>$outputfile
-diff -i -B -w baseline_$outputfile $outputfile
+echo "OneImage regression tests complete" >>$outputfile
+python3 tests/compare_baseline.py baseline_$outputfile $outputfile

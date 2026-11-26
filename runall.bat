@@ -1,10 +1,12 @@
 @echo off
 setlocal
+cd /d "%~dp0"
+set "PATH=%CD%;%PATH%"
 
 set outputfile=test_oios.txt
-echo %date% %time% >%outputfile%
+echo OneImage regression tests >%outputfile%
 
-set _applist=sieveoi eoi tttoi testoi
+set _applist=sieveoi eoi tttoi testoi tests/isa_arithmetic tests/isa_relations tests/isa_memory
 
 set _basiclist=e sieve ttt tp texp tcpm tfor tcomp tgosub tmul test tparen tneg tneg1 ta2dim
 
@@ -17,10 +19,9 @@ oios2 tttoi 17 >>%outputfile%
 oia -w:4 tttoi >>%outputfile%
 oios4 tttoi 13 >>%outputfile%
 
-echo %date% %time% >>%outputfile%
-diff baseline_%outputfile% %outputfile%
-
-goto :eof
+echo OneImage regression tests complete >>%outputfile%
+python tests\compare_baseline.py baseline_%outputfile% %outputfile%
+exit /b %errorlevel%
 
 :basicRun
 

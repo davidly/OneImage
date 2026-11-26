@@ -53,10 +53,12 @@ For example, compile and run a BASIC sample on Linux/macOS:
 
 On Windows, use the same commands without `./` and with Windows path separators.
 BA is built from `ba.cxx` and its included `ba8008.hxx` backend.
-The legacy `runall.sh` and `runall.bat` runners also use the local BA, but require
-an external `diff` command and a `baseline_test_oios.txt` file, which is not
-included in this repository. Use the Python regression runner for a self-contained
-test of a checkout.
+After building, run `./runall.sh` on Linux/macOS or `runall.bat` on Windows
+for the full assembly and BASIC sample matrix, including the ISA suites.
+These runners use the local tools and Python 3.7+ to compare `test_oios.txt`
+against the checked-in `baseline_test_oios.txt`. The comparison ignores platform
+line endings and trailing spaces; values and case must match. Output excludes
+wall-clock timestamps so the same baseline works on both platforms.
 
 
 The standalone assembly suites in `tests/isa_arithmetic.s`, `tests/isa_relations.s`,

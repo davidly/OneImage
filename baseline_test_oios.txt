@@ -1,0 +1,3766 @@
+OneImage regression tests
+test sieveoi
+test sieveoi as 2-bytes
+1899 primes
+1899 primes
+1899 primes
+test sieveoi as 4-bytes
+1899 primes
+1899 primes
+test sieveoi as 8-bytes
+1899 primes
+test eoi
+test eoi as 2-bytes
+271828182845904523536028747135266249775724709369995957496696762772407663035354759457138217852516642742746639193200305992181741359662904357290033429526059563073813232862794349076323382988075319
+done
+271828182845904523536028747135266249775724709369995957496696762772407663035354759457138217852516642742746639193200305992181741359662904357290033429526059563073813232862794349076323382988075319
+done
+271828182845904523536028747135266249775724709369995957496696762772407663035354759457138217852516642742746639193200305992181741359662904357290033429526059563073813232862794349076323382988075319
+done
+test eoi as 4-bytes
+271828182845904523536028747135266249775724709369995957496696762772407663035354759457138217852516642742746639193200305992181741359662904357290033429526059563073813232862794349076323382988075319
+done
+271828182845904523536028747135266249775724709369995957496696762772407663035354759457138217852516642742746639193200305992181741359662904357290033429526059563073813232862794349076323382988075319
+done
+test eoi as 8-bytes
+271828182845904523536028747135266249775724709369995957496696762772407663035354759457138217852516642742746639193200305992181741359662904357290033429526059563073813232862794349076323382988075319
+done
+test tttoi
+test tttoi as 2-bytes
+6493 moves
+1 iterations
+6493 moves
+1 iterations
+6493 moves
+1 iterations
+test tttoi as 4-bytes
+6493 moves
+1 iterations
+6493 moves
+1 iterations
+test tttoi as 8-bytes
+6493 moves
+1 iterations
+test testoi
+test testoi as 2-bytes
+1 argc
+testoi.oi
+done
+1 argc
+testoi.oi
+done
+1 argc
+testoi.oi
+done
+test testoi as 4-bytes
+1 argc
+testoi.oi
+done
+1 argc
+testoi.oi
+done
+test testoi as 8-bytes
+1 argc
+testoi.oi
+done
+test tests/isa_arithmetic
+test tests/isa_arithmetic as 2-bytes
+isa_arithmetic PASS
+isa_arithmetic PASS
+isa_arithmetic PASS
+test tests/isa_arithmetic as 4-bytes
+isa_arithmetic PASS
+isa_arithmetic PASS
+test tests/isa_arithmetic as 8-bytes
+isa_arithmetic PASS
+test tests/isa_relations
+test tests/isa_relations as 2-bytes
+isa_relations PASS
+isa_relations PASS
+isa_relations PASS
+test tests/isa_relations as 4-bytes
+isa_relations PASS
+isa_relations PASS
+test tests/isa_relations as 8-bytes
+isa_relations PASS
+test tests/isa_memory
+test tests/isa_memory as 2-bytes
+isa_memory PASS
+isa_memory PASS
+isa_memory PASS
+test tests/isa_memory as 4-bytes
+isa_memory PASS
+isa_memory PASS
+test tests/isa_memory as 8-bytes
+isa_memory PASS
+test e
+test e as 2-bytes
+271828182845904523536028747135266249775724709369995957496696762772407663035354759457138217852516642742746639193200305992181741359662904357290033429526059563073813232862794349076323382988075319
+done
+271828182845904523536028747135266249775724709369995957496696762772407663035354759457138217852516642742746639193200305992181741359662904357290033429526059563073813232862794349076323382988075319
+done
+271828182845904523536028747135266249775724709369995957496696762772407663035354759457138217852516642742746639193200305992181741359662904357290033429526059563073813232862794349076323382988075319
+done
+test e as 4-bytes
+271828182845904523536028747135266249775724709369995957496696762772407663035354759457138217852516642742746639193200305992181741359662904357290033429526059563073813232862794349076323382988075319
+done
+271828182845904523536028747135266249775724709369995957496696762772407663035354759457138217852516642742746639193200305992181741359662904357290033429526059563073813232862794349076323382988075319
+done
+test e as 8-bytes
+271828182845904523536028747135266249775724709369995957496696762772407663035354759457138217852516642742746639193200305992181741359662904357290033429526059563073813232862794349076323382988075319
+done
+test sieve
+test sieve as 2-bytes
+1899 PRIMES
+ITERATIONS: 10
+1899 PRIMES
+ITERATIONS: 10
+1899 PRIMES
+ITERATIONS: 10
+test sieve as 4-bytes
+1899 PRIMES
+ITERATIONS: 10
+1899 PRIMES
+ITERATIONS: 10
+test sieve as 8-bytes
+1899 PRIMES
+ITERATIONS: 10
+test ttt
+test ttt as 2-bytes
+start time:
+end time for 1 iterations:
+final move count: 6493
+start time:
+end time for 1 iterations:
+final move count: 6493
+start time:
+end time for 1 iterations:
+final move count: 6493
+test ttt as 4-bytes
+start time:
+end time for 1 iterations:
+final move count: 6493
+start time:
+end time for 1 iterations:
+final move count: 6493
+test ttt as 8-bytes
+start time:
+end time for 1 iterations:
+final move count: 6493
+test tp
+test tp as 2-bytes
+start time:
+ for 1 iterations
+end time:
+final move count 6493
+start time:
+ for 1 iterations
+end time:
+final move count 6493
+start time:
+ for 1 iterations
+end time:
+final move count 6493
+test tp as 4-bytes
+start time:
+ for 1 iterations
+end time:
+final move count 6493
+start time:
+ for 1 iterations
+end time:
+final move count 6493
+test tp as 8-bytes
+start time:
+ for 1 iterations
+end time:
+final move count 6493
+test texp
+test texp as 2-bytes
+x% should be 23: 23
+y% should be 45: 45
+z% should be 156: 156
+w is not 0
+now w is 0
+aa%(980) should be 980: 980, bb%(2800) should be 2800: 2800
+v is correct
+v is correct
+v is correct
+v is correct
+r% should be 300: 300
+d% is 3
+d% is 5
+d% is 39
+d% is 2
+winner!
+ll% is correct: 10
+ll% is correct, should be 10: 10
+d% should be 4692: 4692
+d% should be 42218: -23318
+d% should be 8924: 8924
+c 3 x 23 y 45 d 8924 kk 10 p 120
+e% should be -5960: -5960
+e% is correct
+e% is -5: -5
+e% is correct: -5
+x% should be 23: 23
+y% should be 45: 45
+z% should be 156: 156
+w is not 0
+now w is 0
+aa%(980) should be 980: 980, bb%(2800) should be 2800: 2800
+v is correct
+v is correct
+v is correct
+v is correct
+r% should be 300: 300
+d% is 3
+d% is 5
+d% is 39
+d% is 2
+winner!
+ll% is correct: 10
+ll% is correct, should be 10: 10
+d% should be 4692: 4692
+d% should be 42218: -23318
+d% should be 8924: 8924
+c 3 x 23 y 45 d 8924 kk 10 p 120
+e% should be -5960: -5960
+e% is correct
+e% is -5: -5
+e% is correct: -5
+x% should be 23: 23
+y% should be 45: 45
+z% should be 156: 156
+w is not 0
+now w is 0
+aa%(980) should be 980: 980, bb%(2800) should be 2800: 2800
+v is correct
+v is correct
+v is correct
+v is correct
+r% should be 300: 300
+d% is 3
+d% is 5
+d% is 39
+d% is 2
+winner!
+ll% is correct: 10
+ll% is correct, should be 10: 10
+d% should be 4692: 4692
+d% should be 42218: -23318
+d% should be 8924: 8924
+c 3 x 23 y 45 d 8924 kk 10 p 120
+e% should be -5960: -5960
+e% is correct
+e% is -5: -5
+e% is correct: -5
+test texp as 4-bytes
+x% should be 23: 23
+y% should be 45: 45
+z% should be 156: 156
+w is not 0
+now w is 0
+aa%(980) should be 980: 980, bb%(2800) should be 2800: 2800
+v is correct
+v is correct
+v is correct
+v is correct
+r% should be 300: 300
+d% is 3
+d% is 5
+d% is 39
+d% is 2
+winner!
+ll% is correct: 10
+ll% is correct, should be 10: 10
+d% should be 4692: 4692
+d% should be 42218: 42218
+d% should be 8924: 8924
+c 3 x 23 y 45 d 8924 kk 10 p 120
+e% should be -5960: -5960
+e% is correct
+e% is -5: -5
+e% is correct: -5
+x% should be 23: 23
+y% should be 45: 45
+z% should be 156: 156
+w is not 0
+now w is 0
+aa%(980) should be 980: 980, bb%(2800) should be 2800: 2800
+v is correct
+v is correct
+v is correct
+v is correct
+r% should be 300: 300
+d% is 3
+d% is 5
+d% is 39
+d% is 2
+winner!
+ll% is correct: 10
+ll% is correct, should be 10: 10
+d% should be 4692: 4692
+d% should be 42218: 42218
+d% should be 8924: 8924
+c 3 x 23 y 45 d 8924 kk 10 p 120
+e% should be -5960: -5960
+e% is correct
+e% is -5: -5
+e% is correct: -5
+test texp as 8-bytes
+x% should be 23: 23
+y% should be 45: 45
+z% should be 156: 156
+w is not 0
+now w is 0
+aa%(980) should be 980: 980, bb%(2800) should be 2800: 2800
+v is correct
+v is correct
+v is correct
+v is correct
+r% should be 300: 300
+d% is 3
+d% is 5
+d% is 39
+d% is 2
+winner!
+ll% is correct: 10
+ll% is correct, should be 10: 10
+d% should be 4692: 4692
+d% should be 42218: 42218
+d% should be 8924: 8924
+c 3 x 23 y 45 d 8924 kk 10 p 120
+e% should be -5960: -5960
+e% is correct
+e% is -5: -5
+e% is correct: -5
+test tcpm
+test tcpm as 2-bytes
+hello cp/m! part 2! x: 23456
+y: -30876
+  loop variable: 0
+  loop variable: 1
+  loop variable: 2
+  loop variable: 3
+  loop variable: 4
+  loop variable: 5
+  loop variable: -10
+  loop variable: -9
+  loop variable: -8
+  loop variable: -7
+  loop variable: -6
+  loop variable: -5
+  loop variable: -10000
+  loop variable: -9999
+  loop variable: -9998
+  loop variable: -9997
+  loop variable: -9996
+  loop variable: -9995
+  loop variable: 9995
+  loop variable: 9996
+  loop variable: 9997
+  loop variable: 9998
+  loop variable: 9999
+  loop variable: 10000
+s should be -7420: -7420
+s should be 23356: 23356
+d% is 39
+d should be 39: 39
+d% is 2
+d should be 2: 2
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 1 ne 0 le 1 ge 1 lt 0 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 1 ne 0 le 1 ge 1 lt 0 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 1 ne 0 le 1 ge 1 lt 0 gt 0
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 1 ne 0 le 1 ge 1 lt 0 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+j in gosub: 0
+j in gosub: 1
+j in gosub: 2
+j in gosub: 3
+j in gosub: 4
+after goto
+w is not 0
+now w is 0
+aa%(980) should be 980: 980
+x is 27
+x is -27
+x is -27
+x is 27
+x is 115
+x is -115
+x is -115
+x is 115
+bb of ( 0, 0 ) = 0
+bb of ( 0, 1 ) = 0
+bb of ( 0, 2 ) = 0
+bb of ( 0, 3 ) = 0
+bb of ( 0, 4 ) = 0
+bb of ( 0, 5 ) = 0
+bb of ( 0, 6 ) = 0
+bb of ( 0, 7 ) = 0
+bb of ( 1, 0 ) = 0
+bb of ( 1, 1 ) = 1
+bb of ( 1, 2 ) = 2
+bb of ( 1, 3 ) = 3
+bb of ( 1, 4 ) = 4
+bb of ( 1, 5 ) = 5
+bb of ( 1, 6 ) = 6
+bb of ( 1, 7 ) = 7
+bb of ( 2, 0 ) = 0
+bb of ( 2, 1 ) = 2
+bb of ( 2, 2 ) = 4
+bb of ( 2, 3 ) = 6
+bb of ( 2, 4 ) = 8
+bb of ( 2, 5 ) = 10
+bb of ( 2, 6 ) = 12
+bb of ( 2, 7 ) = 14
+bb of ( 3, 0 ) = 0
+bb of ( 3, 1 ) = 3
+bb of ( 3, 2 ) = 6
+bb of ( 3, 3 ) = 9
+bb of ( 3, 4 ) = 12
+bb of ( 3, 5 ) = 15
+bb of ( 3, 6 ) = 18
+bb of ( 3, 7 ) = 21
+bb of ( 4, 0 ) = 0
+bb of ( 4, 1 ) = 4
+bb of ( 4, 2 ) = 8
+bb of ( 4, 3 ) = 12
+bb of ( 4, 4 ) = 16
+bb of ( 4, 5 ) = 20
+bb of ( 4, 6 ) = 24
+bb of ( 4, 7 ) = 28
+x isn't 0
+x isn't 0
+x is 0
+x is 0
+hello cp/m! part 2! x: 23456
+y: -30876
+  loop variable: 0
+  loop variable: 1
+  loop variable: 2
+  loop variable: 3
+  loop variable: 4
+  loop variable: 5
+  loop variable: -10
+  loop variable: -9
+  loop variable: -8
+  loop variable: -7
+  loop variable: -6
+  loop variable: -5
+  loop variable: -10000
+  loop variable: -9999
+  loop variable: -9998
+  loop variable: -9997
+  loop variable: -9996
+  loop variable: -9995
+  loop variable: 9995
+  loop variable: 9996
+  loop variable: 9997
+  loop variable: 9998
+  loop variable: 9999
+  loop variable: 10000
+s should be -7420: -7420
+s should be 23356: 23356
+d% is 39
+d should be 39: 39
+d% is 2
+d should be 2: 2
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 1 ne 0 le 1 ge 1 lt 0 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 1 ne 0 le 1 ge 1 lt 0 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 1 ne 0 le 1 ge 1 lt 0 gt 0
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 1 ne 0 le 1 ge 1 lt 0 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+j in gosub: 0
+j in gosub: 1
+j in gosub: 2
+j in gosub: 3
+j in gosub: 4
+after goto
+w is not 0
+now w is 0
+aa%(980) should be 980: 980
+x is 27
+x is -27
+x is -27
+x is 27
+x is 115
+x is -115
+x is -115
+x is 115
+bb of ( 0, 0 ) = 0
+bb of ( 0, 1 ) = 0
+bb of ( 0, 2 ) = 0
+bb of ( 0, 3 ) = 0
+bb of ( 0, 4 ) = 0
+bb of ( 0, 5 ) = 0
+bb of ( 0, 6 ) = 0
+bb of ( 0, 7 ) = 0
+bb of ( 1, 0 ) = 0
+bb of ( 1, 1 ) = 1
+bb of ( 1, 2 ) = 2
+bb of ( 1, 3 ) = 3
+bb of ( 1, 4 ) = 4
+bb of ( 1, 5 ) = 5
+bb of ( 1, 6 ) = 6
+bb of ( 1, 7 ) = 7
+bb of ( 2, 0 ) = 0
+bb of ( 2, 1 ) = 2
+bb of ( 2, 2 ) = 4
+bb of ( 2, 3 ) = 6
+bb of ( 2, 4 ) = 8
+bb of ( 2, 5 ) = 10
+bb of ( 2, 6 ) = 12
+bb of ( 2, 7 ) = 14
+bb of ( 3, 0 ) = 0
+bb of ( 3, 1 ) = 3
+bb of ( 3, 2 ) = 6
+bb of ( 3, 3 ) = 9
+bb of ( 3, 4 ) = 12
+bb of ( 3, 5 ) = 15
+bb of ( 3, 6 ) = 18
+bb of ( 3, 7 ) = 21
+bb of ( 4, 0 ) = 0
+bb of ( 4, 1 ) = 4
+bb of ( 4, 2 ) = 8
+bb of ( 4, 3 ) = 12
+bb of ( 4, 4 ) = 16
+bb of ( 4, 5 ) = 20
+bb of ( 4, 6 ) = 24
+bb of ( 4, 7 ) = 28
+x isn't 0
+x isn't 0
+x is 0
+x is 0
+hello cp/m! part 2! x: 23456
+y: -30876
+  loop variable: 0
+  loop variable: 1
+  loop variable: 2
+  loop variable: 3
+  loop variable: 4
+  loop variable: 5
+  loop variable: -10
+  loop variable: -9
+  loop variable: -8
+  loop variable: -7
+  loop variable: -6
+  loop variable: -5
+  loop variable: -10000
+  loop variable: -9999
+  loop variable: -9998
+  loop variable: -9997
+  loop variable: -9996
+  loop variable: -9995
+  loop variable: 9995
+  loop variable: 9996
+  loop variable: 9997
+  loop variable: 9998
+  loop variable: 9999
+  loop variable: 10000
+s should be -7420: -7420
+s should be 23356: 23356
+d% is 39
+d should be 39: 39
+d% is 2
+d should be 2: 2
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 1 ne 0 le 1 ge 1 lt 0 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 1 ne 0 le 1 ge 1 lt 0 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 1 ne 0 le 1 ge 1 lt 0 gt 0
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 1 ne 0 le 1 ge 1 lt 0 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+j in gosub: 0
+j in gosub: 1
+j in gosub: 2
+j in gosub: 3
+j in gosub: 4
+after goto
+w is not 0
+now w is 0
+aa%(980) should be 980: 980
+x is 27
+x is -27
+x is -27
+x is 27
+x is 115
+x is -115
+x is -115
+x is 115
+bb of ( 0, 0 ) = 0
+bb of ( 0, 1 ) = 0
+bb of ( 0, 2 ) = 0
+bb of ( 0, 3 ) = 0
+bb of ( 0, 4 ) = 0
+bb of ( 0, 5 ) = 0
+bb of ( 0, 6 ) = 0
+bb of ( 0, 7 ) = 0
+bb of ( 1, 0 ) = 0
+bb of ( 1, 1 ) = 1
+bb of ( 1, 2 ) = 2
+bb of ( 1, 3 ) = 3
+bb of ( 1, 4 ) = 4
+bb of ( 1, 5 ) = 5
+bb of ( 1, 6 ) = 6
+bb of ( 1, 7 ) = 7
+bb of ( 2, 0 ) = 0
+bb of ( 2, 1 ) = 2
+bb of ( 2, 2 ) = 4
+bb of ( 2, 3 ) = 6
+bb of ( 2, 4 ) = 8
+bb of ( 2, 5 ) = 10
+bb of ( 2, 6 ) = 12
+bb of ( 2, 7 ) = 14
+bb of ( 3, 0 ) = 0
+bb of ( 3, 1 ) = 3
+bb of ( 3, 2 ) = 6
+bb of ( 3, 3 ) = 9
+bb of ( 3, 4 ) = 12
+bb of ( 3, 5 ) = 15
+bb of ( 3, 6 ) = 18
+bb of ( 3, 7 ) = 21
+bb of ( 4, 0 ) = 0
+bb of ( 4, 1 ) = 4
+bb of ( 4, 2 ) = 8
+bb of ( 4, 3 ) = 12
+bb of ( 4, 4 ) = 16
+bb of ( 4, 5 ) = 20
+bb of ( 4, 6 ) = 24
+bb of ( 4, 7 ) = 28
+x isn't 0
+x isn't 0
+x is 0
+x is 0
+test tcpm as 4-bytes
+hello cp/m! part 2! x: 23456
+y: -30876
+  loop variable: 0
+  loop variable: 1
+  loop variable: 2
+  loop variable: 3
+  loop variable: 4
+  loop variable: 5
+  loop variable: -10
+  loop variable: -9
+  loop variable: -8
+  loop variable: -7
+  loop variable: -6
+  loop variable: -5
+  loop variable: -10000
+  loop variable: -9999
+  loop variable: -9998
+  loop variable: -9997
+  loop variable: -9996
+  loop variable: -9995
+  loop variable: 9995
+  loop variable: 9996
+  loop variable: 9997
+  loop variable: 9998
+  loop variable: 9999
+  loop variable: 10000
+s should be -7420: -7420
+s should be 23356: 23356
+d% is 39
+d should be 39: 39
+d% is 2
+d should be 2: 2
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 1 ne 0 le 1 ge 1 lt 0 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 1 ne 0 le 1 ge 1 lt 0 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 1 ne 0 le 1 ge 1 lt 0 gt 0
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 1 ne 0 le 1 ge 1 lt 0 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+j in gosub: 0
+j in gosub: 1
+j in gosub: 2
+j in gosub: 3
+j in gosub: 4
+after goto
+w is not 0
+now w is 0
+aa%(980) should be 980: 980
+x is 27
+x is -27
+x is -27
+x is 27
+x is 115
+x is -115
+x is -115
+x is 115
+bb of ( 0, 0 ) = 0
+bb of ( 0, 1 ) = 0
+bb of ( 0, 2 ) = 0
+bb of ( 0, 3 ) = 0
+bb of ( 0, 4 ) = 0
+bb of ( 0, 5 ) = 0
+bb of ( 0, 6 ) = 0
+bb of ( 0, 7 ) = 0
+bb of ( 1, 0 ) = 0
+bb of ( 1, 1 ) = 1
+bb of ( 1, 2 ) = 2
+bb of ( 1, 3 ) = 3
+bb of ( 1, 4 ) = 4
+bb of ( 1, 5 ) = 5
+bb of ( 1, 6 ) = 6
+bb of ( 1, 7 ) = 7
+bb of ( 2, 0 ) = 0
+bb of ( 2, 1 ) = 2
+bb of ( 2, 2 ) = 4
+bb of ( 2, 3 ) = 6
+bb of ( 2, 4 ) = 8
+bb of ( 2, 5 ) = 10
+bb of ( 2, 6 ) = 12
+bb of ( 2, 7 ) = 14
+bb of ( 3, 0 ) = 0
+bb of ( 3, 1 ) = 3
+bb of ( 3, 2 ) = 6
+bb of ( 3, 3 ) = 9
+bb of ( 3, 4 ) = 12
+bb of ( 3, 5 ) = 15
+bb of ( 3, 6 ) = 18
+bb of ( 3, 7 ) = 21
+bb of ( 4, 0 ) = 0
+bb of ( 4, 1 ) = 4
+bb of ( 4, 2 ) = 8
+bb of ( 4, 3 ) = 12
+bb of ( 4, 4 ) = 16
+bb of ( 4, 5 ) = 20
+bb of ( 4, 6 ) = 24
+bb of ( 4, 7 ) = 28
+x isn't 0
+x isn't 0
+x is 0
+x is 0
+hello cp/m! part 2! x: 23456
+y: -30876
+  loop variable: 0
+  loop variable: 1
+  loop variable: 2
+  loop variable: 3
+  loop variable: 4
+  loop variable: 5
+  loop variable: -10
+  loop variable: -9
+  loop variable: -8
+  loop variable: -7
+  loop variable: -6
+  loop variable: -5
+  loop variable: -10000
+  loop variable: -9999
+  loop variable: -9998
+  loop variable: -9997
+  loop variable: -9996
+  loop variable: -9995
+  loop variable: 9995
+  loop variable: 9996
+  loop variable: 9997
+  loop variable: 9998
+  loop variable: 9999
+  loop variable: 10000
+s should be -7420: -7420
+s should be 23356: 23356
+d% is 39
+d should be 39: 39
+d% is 2
+d should be 2: 2
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 1 ne 0 le 1 ge 1 lt 0 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 1 ne 0 le 1 ge 1 lt 0 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 1 ne 0 le 1 ge 1 lt 0 gt 0
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 1 ne 0 le 1 ge 1 lt 0 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+j in gosub: 0
+j in gosub: 1
+j in gosub: 2
+j in gosub: 3
+j in gosub: 4
+after goto
+w is not 0
+now w is 0
+aa%(980) should be 980: 980
+x is 27
+x is -27
+x is -27
+x is 27
+x is 115
+x is -115
+x is -115
+x is 115
+bb of ( 0, 0 ) = 0
+bb of ( 0, 1 ) = 0
+bb of ( 0, 2 ) = 0
+bb of ( 0, 3 ) = 0
+bb of ( 0, 4 ) = 0
+bb of ( 0, 5 ) = 0
+bb of ( 0, 6 ) = 0
+bb of ( 0, 7 ) = 0
+bb of ( 1, 0 ) = 0
+bb of ( 1, 1 ) = 1
+bb of ( 1, 2 ) = 2
+bb of ( 1, 3 ) = 3
+bb of ( 1, 4 ) = 4
+bb of ( 1, 5 ) = 5
+bb of ( 1, 6 ) = 6
+bb of ( 1, 7 ) = 7
+bb of ( 2, 0 ) = 0
+bb of ( 2, 1 ) = 2
+bb of ( 2, 2 ) = 4
+bb of ( 2, 3 ) = 6
+bb of ( 2, 4 ) = 8
+bb of ( 2, 5 ) = 10
+bb of ( 2, 6 ) = 12
+bb of ( 2, 7 ) = 14
+bb of ( 3, 0 ) = 0
+bb of ( 3, 1 ) = 3
+bb of ( 3, 2 ) = 6
+bb of ( 3, 3 ) = 9
+bb of ( 3, 4 ) = 12
+bb of ( 3, 5 ) = 15
+bb of ( 3, 6 ) = 18
+bb of ( 3, 7 ) = 21
+bb of ( 4, 0 ) = 0
+bb of ( 4, 1 ) = 4
+bb of ( 4, 2 ) = 8
+bb of ( 4, 3 ) = 12
+bb of ( 4, 4 ) = 16
+bb of ( 4, 5 ) = 20
+bb of ( 4, 6 ) = 24
+bb of ( 4, 7 ) = 28
+x isn't 0
+x isn't 0
+x is 0
+x is 0
+test tcpm as 8-bytes
+hello cp/m! part 2! x: 23456
+y: -30876
+  loop variable: 0
+  loop variable: 1
+  loop variable: 2
+  loop variable: 3
+  loop variable: 4
+  loop variable: 5
+  loop variable: -10
+  loop variable: -9
+  loop variable: -8
+  loop variable: -7
+  loop variable: -6
+  loop variable: -5
+  loop variable: -10000
+  loop variable: -9999
+  loop variable: -9998
+  loop variable: -9997
+  loop variable: -9996
+  loop variable: -9995
+  loop variable: 9995
+  loop variable: 9996
+  loop variable: 9997
+  loop variable: 9998
+  loop variable: 9999
+  loop variable: 10000
+s should be -7420: -7420
+s should be 23356: 23356
+d% is 39
+d should be 39: 39
+d% is 2
+d should be 2: 2
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 1 ne 0 le 1 ge 1 lt 0 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 1 ne 0 le 1 ge 1 lt 0 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+eq 1 ne 0 le 1 ge 1 lt 0 gt 0
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 0 ne 1 le 0 ge 1 lt 0 gt 1
+eq 1 ne 0 le 1 ge 1 lt 0 gt 0
+eq 0 ne 1 le 1 ge 0 lt 1 gt 0
+j in gosub: 0
+j in gosub: 1
+j in gosub: 2
+j in gosub: 3
+j in gosub: 4
+after goto
+w is not 0
+now w is 0
+aa%(980) should be 980: 980
+x is 27
+x is -27
+x is -27
+x is 27
+x is 115
+x is -115
+x is -115
+x is 115
+bb of ( 0, 0 ) = 0
+bb of ( 0, 1 ) = 0
+bb of ( 0, 2 ) = 0
+bb of ( 0, 3 ) = 0
+bb of ( 0, 4 ) = 0
+bb of ( 0, 5 ) = 0
+bb of ( 0, 6 ) = 0
+bb of ( 0, 7 ) = 0
+bb of ( 1, 0 ) = 0
+bb of ( 1, 1 ) = 1
+bb of ( 1, 2 ) = 2
+bb of ( 1, 3 ) = 3
+bb of ( 1, 4 ) = 4
+bb of ( 1, 5 ) = 5
+bb of ( 1, 6 ) = 6
+bb of ( 1, 7 ) = 7
+bb of ( 2, 0 ) = 0
+bb of ( 2, 1 ) = 2
+bb of ( 2, 2 ) = 4
+bb of ( 2, 3 ) = 6
+bb of ( 2, 4 ) = 8
+bb of ( 2, 5 ) = 10
+bb of ( 2, 6 ) = 12
+bb of ( 2, 7 ) = 14
+bb of ( 3, 0 ) = 0
+bb of ( 3, 1 ) = 3
+bb of ( 3, 2 ) = 6
+bb of ( 3, 3 ) = 9
+bb of ( 3, 4 ) = 12
+bb of ( 3, 5 ) = 15
+bb of ( 3, 6 ) = 18
+bb of ( 3, 7 ) = 21
+bb of ( 4, 0 ) = 0
+bb of ( 4, 1 ) = 4
+bb of ( 4, 2 ) = 8
+bb of ( 4, 3 ) = 12
+bb of ( 4, 4 ) = 16
+bb of ( 4, 5 ) = 20
+bb of ( 4, 6 ) = 24
+bb of ( 4, 7 ) = 28
+x isn't 0
+x isn't 0
+x is 0
+x is 0
+test tfor
+test tfor as 2-bytes
+x 0 y 0 a%(x%,y%) 0
+x 0 y 1 a%(x%,y%) 0
+x 0 y 2 a%(x%,y%) 0
+x 0 y 3 a%(x%,y%) 0
+x 1 y 0 a%(x%,y%) 0
+x 1 y 1 a%(x%,y%) 1
+x 1 y 2 a%(x%,y%) 2
+x 1 y 3 a%(x%,y%) 3
+x 2 y 0 a%(x%,y%) 0
+x 2 y 1 a%(x%,y%) 2
+x 2 y 2 a%(x%,y%) 4
+x 2 y 3 a%(x%,y%) 6
+x 0
+x 1
+x 2
+x 3
+x 4
+x 5
+x 6
+x 7
+x 0 y 0 a%(x%,y%) 0
+x 0 y 1 a%(x%,y%) 0
+x 0 y 2 a%(x%,y%) 0
+x 0 y 3 a%(x%,y%) 0
+x 1 y 0 a%(x%,y%) 0
+x 1 y 1 a%(x%,y%) 1
+x 1 y 2 a%(x%,y%) 2
+x 1 y 3 a%(x%,y%) 3
+x 2 y 0 a%(x%,y%) 0
+x 2 y 1 a%(x%,y%) 2
+x 2 y 2 a%(x%,y%) 4
+x 2 y 3 a%(x%,y%) 6
+x 0
+x 1
+x 2
+x 3
+x 4
+x 5
+x 6
+x 7
+x 0 y 0 a%(x%,y%) 0
+x 0 y 1 a%(x%,y%) 0
+x 0 y 2 a%(x%,y%) 0
+x 0 y 3 a%(x%,y%) 0
+x 1 y 0 a%(x%,y%) 0
+x 1 y 1 a%(x%,y%) 1
+x 1 y 2 a%(x%,y%) 2
+x 1 y 3 a%(x%,y%) 3
+x 2 y 0 a%(x%,y%) 0
+x 2 y 1 a%(x%,y%) 2
+x 2 y 2 a%(x%,y%) 4
+x 2 y 3 a%(x%,y%) 6
+x 0
+x 1
+x 2
+x 3
+x 4
+x 5
+x 6
+x 7
+test tfor as 4-bytes
+x 0 y 0 a%(x%,y%) 0
+x 0 y 1 a%(x%,y%) 0
+x 0 y 2 a%(x%,y%) 0
+x 0 y 3 a%(x%,y%) 0
+x 1 y 0 a%(x%,y%) 0
+x 1 y 1 a%(x%,y%) 1
+x 1 y 2 a%(x%,y%) 2
+x 1 y 3 a%(x%,y%) 3
+x 2 y 0 a%(x%,y%) 0
+x 2 y 1 a%(x%,y%) 2
+x 2 y 2 a%(x%,y%) 4
+x 2 y 3 a%(x%,y%) 6
+x 0
+x 1
+x 2
+x 3
+x 4
+x 5
+x 6
+x 7
+x 0 y 0 a%(x%,y%) 0
+x 0 y 1 a%(x%,y%) 0
+x 0 y 2 a%(x%,y%) 0
+x 0 y 3 a%(x%,y%) 0
+x 1 y 0 a%(x%,y%) 0
+x 1 y 1 a%(x%,y%) 1
+x 1 y 2 a%(x%,y%) 2
+x 1 y 3 a%(x%,y%) 3
+x 2 y 0 a%(x%,y%) 0
+x 2 y 1 a%(x%,y%) 2
+x 2 y 2 a%(x%,y%) 4
+x 2 y 3 a%(x%,y%) 6
+x 0
+x 1
+x 2
+x 3
+x 4
+x 5
+x 6
+x 7
+test tfor as 8-bytes
+x 0 y 0 a%(x%,y%) 0
+x 0 y 1 a%(x%,y%) 0
+x 0 y 2 a%(x%,y%) 0
+x 0 y 3 a%(x%,y%) 0
+x 1 y 0 a%(x%,y%) 0
+x 1 y 1 a%(x%,y%) 1
+x 1 y 2 a%(x%,y%) 2
+x 1 y 3 a%(x%,y%) 3
+x 2 y 0 a%(x%,y%) 0
+x 2 y 1 a%(x%,y%) 2
+x 2 y 2 a%(x%,y%) 4
+x 2 y 3 a%(x%,y%) 6
+x 0
+x 1
+x 2
+x 3
+x 4
+x 5
+x 6
+x 7
+test tcomp
+test tcomp as 2-bytes
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+test tcomp as 4-bytes
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+test tcomp as 8-bytes
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+v is correct
+test tgosub
+test tgosub as 2-bytes
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+same count (should be 290): 290
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+same count (should be 290): 290
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+same count (should be 290): 290
+test tgosub as 4-bytes
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+same count (should be 290): 290
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+same count (should be 290): 290
+test tgosub as 8-bytes
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+i and j are the same
+same count (should be 290): 290
+test tmul
+test tmul as 2-bytes
+a% is 18: 18
+b% is 99: 99
+correct
+c% is 1: 1
+d% is 0: 0
+e% is 215: 215
+f% is 1: 1
+g% is 0: 0
+h% is -15: -15
+h% is -15: -15
+h% is 15: 15
+i% is -5: -5
+i% is -5: -5
+i% is 5: 5
+a% is 18: 18
+b% is 99: 99
+correct
+c% is 1: 1
+d% is 0: 0
+e% is 215: 215
+f% is 1: 1
+g% is 0: 0
+h% is -15: -15
+h% is -15: -15
+h% is 15: 15
+i% is -5: -5
+i% is -5: -5
+i% is 5: 5
+a% is 18: 18
+b% is 99: 99
+correct
+c% is 1: 1
+d% is 0: 0
+e% is 215: 215
+f% is 1: 1
+g% is 0: 0
+h% is -15: -15
+h% is -15: -15
+h% is 15: 15
+i% is -5: -5
+i% is -5: -5
+i% is 5: 5
+test tmul as 4-bytes
+a% is 18: 18
+b% is 99: 99
+correct
+c% is 1: 1
+d% is 0: 0
+e% is 215: 215
+f% is 1: 1
+g% is 0: 0
+h% is -15: -15
+h% is -15: -15
+h% is 15: 15
+i% is -5: -5
+i% is -5: -5
+i% is 5: 5
+a% is 18: 18
+b% is 99: 99
+correct
+c% is 1: 1
+d% is 0: 0
+e% is 215: 215
+f% is 1: 1
+g% is 0: 0
+h% is -15: -15
+h% is -15: -15
+h% is 15: 15
+i% is -5: -5
+i% is -5: -5
+i% is 5: 5
+test tmul as 8-bytes
+a% is 18: 18
+b% is 99: 99
+correct
+c% is 1: 1
+d% is 0: 0
+e% is 215: 215
+f% is 1: 1
+g% is 0: 0
+h% is -15: -15
+h% is -15: -15
+h% is 15: 15
+i% is -5: -5
+i% is -5: -5
+i% is 5: 5
+test test
+test test as 2-bytes
+hello world, i is 1
+  sub hello, j is 36 a[2] is 0
+hello world, i is 2
+  sub hello, j is 39 a[2] is 0
+hello world, i is 3
+  sub hello, j is 42 a[2] is 39
+hello world, i is 4
+  sub hello, j is 45 a[2] is 39
+hello world, i is 5
+  sub hello, j is 48 a[2] is 39
+st%: 9
+st%: 8
+st%: 7
+st%: 6
+st%: 5
+st%: 4
+st%: 3
+st%: 2
+st%: 1
+st%: 0
+  sub hello, j is 51 a[2] is 39
+in 1000 gosub function
+line 1050, re: 1
+line 1060, re: 1
+returning now
+x% is 13 ^ 42, which is 39: 39
+0 <> 4
+0 <> 4
+v% range 0 13 0: 0 13 0
+j is > 33!
+j is < 4444
+77 is odd
+78 is even
+va% as -100: -100
+va% as 100: 100
+wi% 1 rw% 0
+match
+no match
+a%( 2 ) from newly created variable: 0
+yy% is a new variable that should be 0 0
+hello world, i is 1
+  sub hello, j is 36 a[2] is 0
+hello world, i is 2
+  sub hello, j is 39 a[2] is 0
+hello world, i is 3
+  sub hello, j is 42 a[2] is 39
+hello world, i is 4
+  sub hello, j is 45 a[2] is 39
+hello world, i is 5
+  sub hello, j is 48 a[2] is 39
+st%: 9
+st%: 8
+st%: 7
+st%: 6
+st%: 5
+st%: 4
+st%: 3
+st%: 2
+st%: 1
+st%: 0
+  sub hello, j is 51 a[2] is 39
+in 1000 gosub function
+line 1050, re: 1
+line 1060, re: 1
+returning now
+x% is 13 ^ 42, which is 39: 39
+0 <> 4
+0 <> 4
+v% range 0 13 0: 0 13 0
+j is > 33!
+j is < 4444
+77 is odd
+78 is even
+va% as -100: -100
+va% as 100: 100
+wi% 1 rw% 0
+match
+no match
+a%( 2 ) from newly created variable: 0
+yy% is a new variable that should be 0 0
+hello world, i is 1
+  sub hello, j is 36 a[2] is 0
+hello world, i is 2
+  sub hello, j is 39 a[2] is 0
+hello world, i is 3
+  sub hello, j is 42 a[2] is 39
+hello world, i is 4
+  sub hello, j is 45 a[2] is 39
+hello world, i is 5
+  sub hello, j is 48 a[2] is 39
+st%: 9
+st%: 8
+st%: 7
+st%: 6
+st%: 5
+st%: 4
+st%: 3
+st%: 2
+st%: 1
+st%: 0
+  sub hello, j is 51 a[2] is 39
+in 1000 gosub function
+line 1050, re: 1
+line 1060, re: 1
+returning now
+x% is 13 ^ 42, which is 39: 39
+0 <> 4
+0 <> 4
+v% range 0 13 0: 0 13 0
+j is > 33!
+j is < 4444
+77 is odd
+78 is even
+va% as -100: -100
+va% as 100: 100
+wi% 1 rw% 0
+match
+no match
+a%( 2 ) from newly created variable: 0
+yy% is a new variable that should be 0 0
+test test as 4-bytes
+hello world, i is 1
+  sub hello, j is 36 a[2] is 0
+hello world, i is 2
+  sub hello, j is 39 a[2] is 0
+hello world, i is 3
+  sub hello, j is 42 a[2] is 39
+hello world, i is 4
+  sub hello, j is 45 a[2] is 39
+hello world, i is 5
+  sub hello, j is 48 a[2] is 39
+st%: 9
+st%: 8
+st%: 7
+st%: 6
+st%: 5
+st%: 4
+st%: 3
+st%: 2
+st%: 1
+st%: 0
+  sub hello, j is 51 a[2] is 39
+in 1000 gosub function
+line 1050, re: 1
+line 1060, re: 1
+returning now
+x% is 13 ^ 42, which is 39: 39
+0 <> 4
+0 <> 4
+v% range 0 13 0: 0 13 0
+j is > 33!
+j is < 4444
+77 is odd
+78 is even
+va% as -100: -100
+va% as 100: 100
+wi% 1 rw% 0
+match
+no match
+a%( 2 ) from newly created variable: 0
+yy% is a new variable that should be 0 0
+hello world, i is 1
+  sub hello, j is 36 a[2] is 0
+hello world, i is 2
+  sub hello, j is 39 a[2] is 0
+hello world, i is 3
+  sub hello, j is 42 a[2] is 39
+hello world, i is 4
+  sub hello, j is 45 a[2] is 39
+hello world, i is 5
+  sub hello, j is 48 a[2] is 39
+st%: 9
+st%: 8
+st%: 7
+st%: 6
+st%: 5
+st%: 4
+st%: 3
+st%: 2
+st%: 1
+st%: 0
+  sub hello, j is 51 a[2] is 39
+in 1000 gosub function
+line 1050, re: 1
+line 1060, re: 1
+returning now
+x% is 13 ^ 42, which is 39: 39
+0 <> 4
+0 <> 4
+v% range 0 13 0: 0 13 0
+j is > 33!
+j is < 4444
+77 is odd
+78 is even
+va% as -100: -100
+va% as 100: 100
+wi% 1 rw% 0
+match
+no match
+a%( 2 ) from newly created variable: 0
+yy% is a new variable that should be 0 0
+test test as 8-bytes
+hello world, i is 1
+  sub hello, j is 36 a[2] is 0
+hello world, i is 2
+  sub hello, j is 39 a[2] is 0
+hello world, i is 3
+  sub hello, j is 42 a[2] is 39
+hello world, i is 4
+  sub hello, j is 45 a[2] is 39
+hello world, i is 5
+  sub hello, j is 48 a[2] is 39
+st%: 9
+st%: 8
+st%: 7
+st%: 6
+st%: 5
+st%: 4
+st%: 3
+st%: 2
+st%: 1
+st%: 0
+  sub hello, j is 51 a[2] is 39
+in 1000 gosub function
+line 1050, re: 1
+line 1060, re: 1
+returning now
+x% is 13 ^ 42, which is 39: 39
+0 <> 4
+0 <> 4
+v% range 0 13 0: 0 13 0
+j is > 33!
+j is < 4444
+77 is odd
+78 is even
+va% as -100: -100
+va% as 100: 100
+wi% 1 rw% 0
+match
+no match
+a%( 2 ) from newly created variable: 0
+yy% is a new variable that should be 0 0
+test tparen
+test tparen as 2-bytes
+a% should be 63: 63
+b% should be -17: -17
+c% should be -86 -86
+a% should be 63: 63
+b% should be -17: -17
+c% should be -86 -86
+a% should be 63: 63
+b% should be -17: -17
+c% should be -86 -86
+test tparen as 4-bytes
+a% should be 63: 63
+b% should be -17: -17
+c% should be -86 -86
+a% should be 63: 63
+b% should be -17: -17
+c% should be -86 -86
+test tparen as 8-bytes
+a% should be 63: 63
+b% should be -17: -17
+c% should be -86 -86
+test tneg
+test tneg as 2-bytes
+minus 1: -1
+minus 3: -3
+eight: 8
+x should be -1: -1
+y should be -36: -36
+z should be 9: 9
+a%(3) should be -10 -10
+a%(4) should be -20 -20
+a%(9) should be -50 -50
+b%(2,3) should be -10 -10
+b%(4,4) should be -20 -20
+b%(2,7) should be -50 -50
+c%      should be 50 50
+z% should be -14 -14
+minus 1: -1
+minus 3: -3
+eight: 8
+x should be -1: -1
+y should be -36: -36
+z should be 9: 9
+a%(3) should be -10 -10
+a%(4) should be -20 -20
+a%(9) should be -50 -50
+b%(2,3) should be -10 -10
+b%(4,4) should be -20 -20
+b%(2,7) should be -50 -50
+c%      should be 50 50
+z% should be -14 -14
+minus 1: -1
+minus 3: -3
+eight: 8
+x should be -1: -1
+y should be -36: -36
+z should be 9: 9
+a%(3) should be -10 -10
+a%(4) should be -20 -20
+a%(9) should be -50 -50
+b%(2,3) should be -10 -10
+b%(4,4) should be -20 -20
+b%(2,7) should be -50 -50
+c%      should be 50 50
+z% should be -14 -14
+test tneg as 4-bytes
+minus 1: -1
+minus 3: -3
+eight: 8
+x should be -1: -1
+y should be -36: -36
+z should be 9: 9
+a%(3) should be -10 -10
+a%(4) should be -20 -20
+a%(9) should be -50 -50
+b%(2,3) should be -10 -10
+b%(4,4) should be -20 -20
+b%(2,7) should be -50 -50
+c%      should be 50 50
+z% should be -14 -14
+minus 1: -1
+minus 3: -3
+eight: 8
+x should be -1: -1
+y should be -36: -36
+z should be 9: 9
+a%(3) should be -10 -10
+a%(4) should be -20 -20
+a%(9) should be -50 -50
+b%(2,3) should be -10 -10
+b%(4,4) should be -20 -20
+b%(2,7) should be -50 -50
+c%      should be 50 50
+z% should be -14 -14
+test tneg as 8-bytes
+minus 1: -1
+minus 3: -3
+eight: 8
+x should be -1: -1
+y should be -36: -36
+z should be 9: 9
+a%(3) should be -10 -10
+a%(4) should be -20 -20
+a%(9) should be -50 -50
+b%(2,3) should be -10 -10
+b%(4,4) should be -20 -20
+b%(2,7) should be -50 -50
+c%      should be 50 50
+z% should be -14 -14
+test tneg1
+test tneg1 as 2-bytes
+minus 1: -1
+minus 3: -3
+eight: 8
+x should be -1: -1
+y should be -36: -36
+z should be 9: 9
+a%(3) should be -10 -10
+a%(4) should be -20 -20
+a%(9) should be -50 -50
+b%(2) should be -10 -10
+b%(4) should be -20 -20
+b%(7) should be -50 -50
+c%      should be 50 50
+z% should be -14 -14
+m% is -144
+minus 1: -1
+minus 3: -3
+eight: 8
+x should be -1: -1
+y should be -36: -36
+z should be 9: 9
+a%(3) should be -10 -10
+a%(4) should be -20 -20
+a%(9) should be -50 -50
+b%(2) should be -10 -10
+b%(4) should be -20 -20
+b%(7) should be -50 -50
+c%      should be 50 50
+z% should be -14 -14
+m% is -144
+minus 1: -1
+minus 3: -3
+eight: 8
+x should be -1: -1
+y should be -36: -36
+z should be 9: 9
+a%(3) should be -10 -10
+a%(4) should be -20 -20
+a%(9) should be -50 -50
+b%(2) should be -10 -10
+b%(4) should be -20 -20
+b%(7) should be -50 -50
+c%      should be 50 50
+z% should be -14 -14
+m% is -144
+test tneg1 as 4-bytes
+minus 1: -1
+minus 3: -3
+eight: 8
+x should be -1: -1
+y should be -36: -36
+z should be 9: 9
+a%(3) should be -10 -10
+a%(4) should be -20 -20
+a%(9) should be -50 -50
+b%(2) should be -10 -10
+b%(4) should be -20 -20
+b%(7) should be -50 -50
+c%      should be 50 50
+z% should be -14 -14
+m% is -144
+minus 1: -1
+minus 3: -3
+eight: 8
+x should be -1: -1
+y should be -36: -36
+z should be 9: 9
+a%(3) should be -10 -10
+a%(4) should be -20 -20
+a%(9) should be -50 -50
+b%(2) should be -10 -10
+b%(4) should be -20 -20
+b%(7) should be -50 -50
+c%      should be 50 50
+z% should be -14 -14
+m% is -144
+test tneg1 as 8-bytes
+minus 1: -1
+minus 3: -3
+eight: 8
+x should be -1: -1
+y should be -36: -36
+z should be 9: 9
+a%(3) should be -10 -10
+a%(4) should be -20 -20
+a%(9) should be -50 -50
+b%(2) should be -10 -10
+b%(4) should be -20 -20
+b%(7) should be -50 -50
+c%      should be 50 50
+z% should be -14 -14
+m% is -144
+test ta2dim
+test ta2dim as 2-bytes
+a 0 b 0 aa(a,b) 1
+a 0 b 1 aa(a,b) 2
+a 0 b 2 aa(a,b) 3
+a 0 b 3 aa(a,b) 0
+a 0 b 4 aa(a,b) 0
+a 1 b 0 aa(a,b) 4
+a 1 b 1 aa(a,b) 5
+a 1 b 2 aa(a,b) 6
+a 1 b 3 aa(a,b) 0
+a 1 b 4 aa(a,b) 0
+a 2 b 0 aa(a,b) 7
+a 2 b 1 aa(a,b) 8
+a 2 b 2 aa(a,b) 9
+a 2 b 3 aa(a,b) 0
+a 2 b 4 aa(a,b) 0
+a 0 b 0 aa(a,b) 0
+a 0 b 1 aa(a,b) 0
+a 0 b 2 aa(a,b) 0
+a 0 b 3 aa(a,b) 0
+a 0 b 4 aa(a,b) 0
+a 1 b 0 aa(a,b) 0
+a 1 b 1 aa(a,b) 1
+a 1 b 2 aa(a,b) 2
+a 1 b 3 aa(a,b) 3
+a 1 b 4 aa(a,b) 4
+a 2 b 0 aa(a,b) 0
+a 2 b 1 aa(a,b) 2
+a 2 b 2 aa(a,b) 4
+a 2 b 3 aa(a,b) 6
+a 2 b 4 aa(a,b) 8
+a 0 b 0 aa(a,b) 1
+a 0 b 1 aa(a,b) 2
+a 0 b 2 aa(a,b) 3
+a 0 b 3 aa(a,b) 0
+a 0 b 4 aa(a,b) 0
+a 1 b 0 aa(a,b) 4
+a 1 b 1 aa(a,b) 5
+a 1 b 2 aa(a,b) 6
+a 1 b 3 aa(a,b) 0
+a 1 b 4 aa(a,b) 0
+a 2 b 0 aa(a,b) 7
+a 2 b 1 aa(a,b) 8
+a 2 b 2 aa(a,b) 9
+a 2 b 3 aa(a,b) 0
+a 2 b 4 aa(a,b) 0
+a 0 b 0 aa(a,b) 0
+a 0 b 1 aa(a,b) 0
+a 0 b 2 aa(a,b) 0
+a 0 b 3 aa(a,b) 0
+a 0 b 4 aa(a,b) 0
+a 1 b 0 aa(a,b) 0
+a 1 b 1 aa(a,b) 1
+a 1 b 2 aa(a,b) 2
+a 1 b 3 aa(a,b) 3
+a 1 b 4 aa(a,b) 4
+a 2 b 0 aa(a,b) 0
+a 2 b 1 aa(a,b) 2
+a 2 b 2 aa(a,b) 4
+a 2 b 3 aa(a,b) 6
+a 2 b 4 aa(a,b) 8
+a 0 b 0 aa(a,b) 1
+a 0 b 1 aa(a,b) 2
+a 0 b 2 aa(a,b) 3
+a 0 b 3 aa(a,b) 0
+a 0 b 4 aa(a,b) 0
+a 1 b 0 aa(a,b) 4
+a 1 b 1 aa(a,b) 5
+a 1 b 2 aa(a,b) 6
+a 1 b 3 aa(a,b) 0
+a 1 b 4 aa(a,b) 0
+a 2 b 0 aa(a,b) 7
+a 2 b 1 aa(a,b) 8
+a 2 b 2 aa(a,b) 9
+a 2 b 3 aa(a,b) 0
+a 2 b 4 aa(a,b) 0
+a 0 b 0 aa(a,b) 0
+a 0 b 1 aa(a,b) 0
+a 0 b 2 aa(a,b) 0
+a 0 b 3 aa(a,b) 0
+a 0 b 4 aa(a,b) 0
+a 1 b 0 aa(a,b) 0
+a 1 b 1 aa(a,b) 1
+a 1 b 2 aa(a,b) 2
+a 1 b 3 aa(a,b) 3
+a 1 b 4 aa(a,b) 4
+a 2 b 0 aa(a,b) 0
+a 2 b 1 aa(a,b) 2
+a 2 b 2 aa(a,b) 4
+a 2 b 3 aa(a,b) 6
+a 2 b 4 aa(a,b) 8
+test ta2dim as 4-bytes
+a 0 b 0 aa(a,b) 1
+a 0 b 1 aa(a,b) 2
+a 0 b 2 aa(a,b) 3
+a 0 b 3 aa(a,b) 0
+a 0 b 4 aa(a,b) 0
+a 1 b 0 aa(a,b) 4
+a 1 b 1 aa(a,b) 5
+a 1 b 2 aa(a,b) 6
+a 1 b 3 aa(a,b) 0
+a 1 b 4 aa(a,b) 0
+a 2 b 0 aa(a,b) 7
+a 2 b 1 aa(a,b) 8
+a 2 b 2 aa(a,b) 9
+a 2 b 3 aa(a,b) 0
+a 2 b 4 aa(a,b) 0
+a 0 b 0 aa(a,b) 0
+a 0 b 1 aa(a,b) 0
+a 0 b 2 aa(a,b) 0
+a 0 b 3 aa(a,b) 0
+a 0 b 4 aa(a,b) 0
+a 1 b 0 aa(a,b) 0
+a 1 b 1 aa(a,b) 1
+a 1 b 2 aa(a,b) 2
+a 1 b 3 aa(a,b) 3
+a 1 b 4 aa(a,b) 4
+a 2 b 0 aa(a,b) 0
+a 2 b 1 aa(a,b) 2
+a 2 b 2 aa(a,b) 4
+a 2 b 3 aa(a,b) 6
+a 2 b 4 aa(a,b) 8
+a 0 b 0 aa(a,b) 1
+a 0 b 1 aa(a,b) 2
+a 0 b 2 aa(a,b) 3
+a 0 b 3 aa(a,b) 0
+a 0 b 4 aa(a,b) 0
+a 1 b 0 aa(a,b) 4
+a 1 b 1 aa(a,b) 5
+a 1 b 2 aa(a,b) 6
+a 1 b 3 aa(a,b) 0
+a 1 b 4 aa(a,b) 0
+a 2 b 0 aa(a,b) 7
+a 2 b 1 aa(a,b) 8
+a 2 b 2 aa(a,b) 9
+a 2 b 3 aa(a,b) 0
+a 2 b 4 aa(a,b) 0
+a 0 b 0 aa(a,b) 0
+a 0 b 1 aa(a,b) 0
+a 0 b 2 aa(a,b) 0
+a 0 b 3 aa(a,b) 0
+a 0 b 4 aa(a,b) 0
+a 1 b 0 aa(a,b) 0
+a 1 b 1 aa(a,b) 1
+a 1 b 2 aa(a,b) 2
+a 1 b 3 aa(a,b) 3
+a 1 b 4 aa(a,b) 4
+a 2 b 0 aa(a,b) 0
+a 2 b 1 aa(a,b) 2
+a 2 b 2 aa(a,b) 4
+a 2 b 3 aa(a,b) 6
+a 2 b 4 aa(a,b) 8
+test ta2dim as 8-bytes
+a 0 b 0 aa(a,b) 1
+a 0 b 1 aa(a,b) 2
+a 0 b 2 aa(a,b) 3
+a 0 b 3 aa(a,b) 0
+a 0 b 4 aa(a,b) 0
+a 1 b 0 aa(a,b) 4
+a 1 b 1 aa(a,b) 5
+a 1 b 2 aa(a,b) 6
+a 1 b 3 aa(a,b) 0
+a 1 b 4 aa(a,b) 0
+a 2 b 0 aa(a,b) 7
+a 2 b 1 aa(a,b) 8
+a 2 b 2 aa(a,b) 9
+a 2 b 3 aa(a,b) 0
+a 2 b 4 aa(a,b) 0
+a 0 b 0 aa(a,b) 0
+a 0 b 1 aa(a,b) 0
+a 0 b 2 aa(a,b) 0
+a 0 b 3 aa(a,b) 0
+a 0 b 4 aa(a,b) 0
+a 1 b 0 aa(a,b) 0
+a 1 b 1 aa(a,b) 1
+a 1 b 2 aa(a,b) 2
+a 1 b 3 aa(a,b) 3
+a 1 b 4 aa(a,b) 4
+a 2 b 0 aa(a,b) 0
+a 2 b 1 aa(a,b) 2
+a 2 b 2 aa(a,b) 4
+a 2 b 3 aa(a,b) 6
+a 2 b 4 aa(a,b) 8
+6493 moves
+17 iterations
+6493 moves
+13 iterations
+OneImage regression tests complete
