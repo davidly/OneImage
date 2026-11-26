@@ -404,9 +404,8 @@ string UnescapeBASICString( string & str )
 
 struct Variable
 {
-    Variable( const char * v )
+    Variable( const char * v ) : value( 0 ), name(), dimensions( 0 ), dims(), references( 0 ), mos6502ZeroPage( false )
     {
-        memset( this, 0, sizeof *this );
         assert( strlen( v ) <= 3 );
         strcpy_s( name, _countof( name ), v );
         my_strlwr( name );
@@ -1935,23 +1934,26 @@ __makeinline int EvaluateExpressionOptimized( int & iToken, vector<TokenValue> c
     return value;
 } //EvaluateExpressionOptimized
 
-void PrintNumberWithCommas( char *pchars, long long n )
+void PrintNumberWithCommas( char *pchars, size_t size, long long n )
 {
+    size_t len = strlen( pchars );
+
     if ( n < 0 )
     {
-        sprintf( pchars, "-" );
-        PrintNumberWithCommas( pchars, -n );
+        snprintf( pchars + len, size - len, "-" );
+        PrintNumberWithCommas( pchars, size, -n );
         return;
     }
 
     if ( n < 1000 )
     {
-        sprintf( pchars + strlen( pchars ), "%lld", n );
+        snprintf( pchars + len, size - len, "%lld", n );
         return;
     }
 
-    PrintNumberWithCommas( pchars, n / 1000 );
-    sprintf( pchars + strlen( pchars ), ",%03lld", n % 1000 );
+    PrintNumberWithCommas( pchars, size, n / 1000 );
+    len = strlen( pchars );
+    snprintf( pchars + len, size - len, ",%03lld", n % 1000 );
 } //PrintNumberWithCommas
 
 void ShowLocListing( LineOfCode & loc )
@@ -2451,7 +2453,7 @@ void LoadArm32Label( FILE * fp, const char * reg, const char * labelname )
 void LoadArm32LineNumber( FILE * fp, const char * reg, int linenumber )
 {
     char aclabel[ 100 ];
-    sprintf( aclabel, "line_number_%d", linenumber );
+    snprintf( aclabel, sizeof( aclabel ), "line_number_%d", linenumber );
     LoadArm32Label( fp, reg, aclabel );
 } //LoadArm32LineNumber
 
@@ -13500,7 +13502,7 @@ void InterpretCode( map<string, Variable> & varmap, bool showExecutionTime )
 #endif
                         static char acElap[ 100 ];
                         acElap[ 0 ] = 0;
-                        PrintNumberWithCommas( acElap, duration );
+                        PrintNumberWithCommas( acElap, sizeof( acElap ), duration );
                         printf( "%s ms", acElap );
                         t += 2;
                     }
@@ -13619,10 +13621,10 @@ void InterpretCode( map<string, Variable> & varmap, bool showExecutionTime )
 
                 acTimes[ 0 ] = 0;
                 acDuration[ 0 ] = 0;
-                PrintNumberWithCommas( acTimes, loc.timesExecuted );
+                PrintNumberWithCommas( acTimes, sizeof( acTimes ), loc.timesExecuted );
 
                 long long duration = loc.duration;
-                PrintNumberWithCommas( acDuration, duration );
+                PrintNumberWithCommas( acDuration, sizeof( acDuration ), duration );
 
                 double average = loc.timesExecuted ? ( (double) duration / (double) loc.timesExecuted ) : 0.0;
                 printf( "  %7d  %13s    %15s    %12.3lf", loc.lineNumber, acTimes, acDuration, average );

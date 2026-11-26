@@ -1,4 +1,4 @@
 #!/bin/sh
 set -eu
 cd "$(dirname "$0")"
-"${CXX:-c++}" -std=c++11 -O3 -DNDEBUG -DOI4 -I . oios.c oi.c trace.c oidis.c -o oios4
+"${CXX:-c++}" -std=c++11 -O3 -DNDEBUG -DOI4 -I . -x c++ oios.c oi.c trace.c oidis.c -o oios4
